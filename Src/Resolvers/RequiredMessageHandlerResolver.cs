@@ -3,7 +3,7 @@ using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator.Resolvers
 {
-    public class RequiredMultiMessageHandlerResolver : IMessageHandlerResolver
+    public class RequiredMessageHandlerResolver : IMessageHandlerResolver
     {
         #region Declarations
             
@@ -17,7 +17,7 @@ namespace Xer.Delegator.Resolvers
         /// Multi message handler resolver instance to decorate.
         /// </summary>
         /// <param name="messageHandlerResolver">Message handler resolver.</param>
-        public RequiredMultiMessageHandlerResolver(IMessageHandlerResolver messageHandlerResolver)
+        public RequiredMessageHandlerResolver(IMessageHandlerResolver messageHandlerResolver)
         {
             _messageHandlerResolver = messageHandlerResolver ?? throw new ArgumentNullException(nameof(messageHandlerResolver));    
         }
