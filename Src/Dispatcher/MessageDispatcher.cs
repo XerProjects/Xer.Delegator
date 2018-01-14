@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Xer.Delegator.Internal;
+using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator.Dispatcher
 {
@@ -41,7 +41,7 @@ namespace Xer.Delegator.Dispatcher
 
             if(messageHandler == null)
             {
-                throw ExceptionBuilder.NoMessageHandlerResolvedException(typeof(TMessage));
+                throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage));
             }
 
             return messageHandler.Invoke(message, cancellationToken);

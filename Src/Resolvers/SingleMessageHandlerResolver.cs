@@ -1,6 +1,5 @@
 using System;
 using Xer.Delegator.Exceptions;
-using Xer.Delegator.Internal;
 using Xer.Delegator.Registrations;
 
 namespace Xer.Delegator.Resolvers

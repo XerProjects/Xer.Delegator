@@ -1,5 +1,5 @@
 using System;
-using Xer.Delegator.Internal;
+using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator.Resolvers
 {
@@ -7,7 +7,7 @@ namespace Xer.Delegator.Resolvers
     {
         #region Declarations
             
-        private readonly MultiMessageHandlerResolver _multiMessageHandlerResolver;
+        private readonly IMessageHandlerResolver _messageHandlerResolver;
 
         #endregion Declarations
 
@@ -16,10 +16,10 @@ namespace Xer.Delegator.Resolvers
         /// <summary>
         /// Multi message handler resolver instance to decorate.
         /// </summary>
-        /// <param name="multiMessageHandlerResolver">Multi message handler resolver.</param>
-        public RequiredMultiMessageHandlerResolver(MultiMessageHandlerResolver multiMessageHandlerResolver)
+        /// <param name="messageHandlerResolver">Message handler resolver.</param>
+        public RequiredMultiMessageHandlerResolver(IMessageHandlerResolver messageHandlerResolver)
         {
-            _multiMessageHandlerResolver = multiMessageHandlerResolver ?? throw new ArgumentNullException(nameof(multiMessageHandlerResolver));    
+            _messageHandlerResolver = messageHandlerResolver ?? throw new ArgumentNullException(nameof(messageHandlerResolver));    
         }
 
         #endregion Constructors
@@ -34,15 +34,22 @@ namespace Xer.Delegator.Resolvers
         /// <exception cref="Xer.Delegator.Exceptions.NoMessageHandlerResolvedException">Throws when no message handler delegate is found.</exception>  
         public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
         {
-            MessageHandlerDelegate<TMessage> messageHandler = _multiMessageHandlerResolver.ResolveMessageHandler<TMessage>();
-            
-            // Throw if resolved handler is a null message handler.
-            if(messageHandler == null || messageHandler == NullMessageHandlerDelegate<TMessage>.Value)
+            try
             {
-                throw ExceptionBuilder.NoMessageHandlerResolvedException(typeof(TMessage));
-            }
+                MessageHandlerDelegate<TMessage> messageHandler = _messageHandlerResolver.ResolveMessageHandler<TMessage>();
+                
+                // Throw if resolved handler is a null message handler.
+                if(messageHandler == null || messageHandler == NullMessageHandlerDelegate<TMessage>.Value)
+                {
+                    throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage));
+                }
 
-            return messageHandler;
+                return messageHandler;
+            }
+            catch(Exception ex)
+            {
+                throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage), ex);
+            }
         }
 
         #endregion IMessageHandlerResolver Implementation

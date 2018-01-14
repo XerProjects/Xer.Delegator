@@ -37,5 +37,25 @@ namespace Xer.Delegator.Exceptions
         }
 
         #endregion Constructors
+
+        #region Methods
+        
+        /// <summary>
+        /// Create instance of NoMessageHandlerResolvedException with a default message.
+        /// </summary>
+        /// <param name="messageType">Type of message.</param>
+        /// <param name="ex">Inner exception, if available.</param>
+        /// <returns>Instance of NoMessageHandlerResolvedException.</returns>
+        public static NoMessageHandlerResolvedException FromMessageType(Type messageType, Exception ex = null)
+        {
+            if(ex != null)
+            {
+                return new NoMessageHandlerResolvedException($"Error occurred while trying to resolve message handler for { messageType.Name }.", messageType, ex);
+            }
+            
+            return new NoMessageHandlerResolvedException($"Unable to resolve message handler for { messageType.Name }.", messageType, ex);
+        }
+
+        #endregion Methods
     }
 }

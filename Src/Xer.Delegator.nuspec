@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Xer.Delegator</id>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <title>Xer.Delegator</title>
     <authors>jeyjeyemem</authors>
     <owners>jeyjeyemem</owners>
@@ -12,7 +12,9 @@
     <description>A simple delegate-based message handling library.</description>
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
-      - Initial release
+      - Merged RequiredSingleMessageHandlerResolver and RequiredMultiMessageHandlerResolver into RequiredMultiMessageHandlerResolver.
+      - Added CompositeMessageHandlerResolver.
+      - Added NoMessageHandlerResolvedException.FromMessageType method to create exception with default message.
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Delegate Message Handling Library</tags>
