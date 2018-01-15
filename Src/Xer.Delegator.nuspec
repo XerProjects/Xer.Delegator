@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Xer.Delegator</id>
-    <version>0.2.1</version>
+    <version>0.2.2</version>
     <title>Xer.Delegator</title>
     <authors>jeyjeyemem</authors>
     <owners>jeyjeyemem</owners>
@@ -13,6 +13,7 @@
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
       - Renamed IDelegator/Delegator to IMessageDelegator/MessageDelegator due to namespace conflict.
+      - Forgot to build source before publishing last version :(
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Delegate Message Handling Library</tags>
