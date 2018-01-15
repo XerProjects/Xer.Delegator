@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Xer.Delegator
 {
-    public interface IDelegator
+    public interface IMessageDelegator
     {
         /// <summary>
         /// Sends message to handler.

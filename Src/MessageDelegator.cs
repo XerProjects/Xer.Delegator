@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xer.Delegator.Exceptions;
 
-namespace Xer.Delegator.Delegators
+namespace Xer.Delegator
 {
-    public class Delegator : IDelegator
+    public class MessageDelegator : IMessageDelegator
     {
         #region Declarations
             
@@ -19,7 +19,7 @@ namespace Xer.Delegator.Delegators
         /// Constructor.
         /// </summary>
         /// <param name="messageHandlerResolver">Message handler resolver.</param>
-        public Delegator(IMessageHandlerResolver messageHandlerResolver)
+        public MessageDelegator(IMessageHandlerResolver messageHandlerResolver)
         {
             _messageHandlerResolver = messageHandlerResolver ?? throw new ArgumentNullException(nameof(messageHandlerResolver));
         }
