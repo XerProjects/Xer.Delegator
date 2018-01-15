@@ -12,7 +12,7 @@
     <description>A simple delegate-based message handling library.</description>
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
-      - Renamed IMessageDispatcher to IDelegator and changed DispatchAsync method to SendAsync
+      - Renamed IMessageDispatcher to IDelegator and changed DispatchAsync method to SendAsync (Breaking Change).
       - Modified CompositeMessageHandlerResolver to receive any list of IMessageHandlerResolver.
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
