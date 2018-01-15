@@ -12,35 +12,15 @@ namespace Xer.Delegator.Resolvers
 
         #endregion Declarations
 
-        #region Properties
-
-        /// <summary>
-        /// Determines whether this resolver will throw if no message handler delegate is found from all its sources.
-        /// </summary>
-        public bool ThrowIfNoHandlerIsFound { get; }
-
-        #endregion Properties
-
         #region Constructors
         
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="singleMessageHandlerResolvers">List of single message handler resolvers.</param>
-        public CompositeMessageHandlerResolver(IEnumerable<SingleMessageHandlerResolver> singleMessageHandlerResolvers, bool throwIfNoHandlerIsFound = true)
+        /// <param name="messageHandlerResolvers">List of message handler resolvers.</param>
+        public CompositeMessageHandlerResolver(IEnumerable<IMessageHandlerResolver> messageHandlerResolvers)
         {
-            ThrowIfNoHandlerIsFound = throwIfNoHandlerIsFound;
-            _resolvers = singleMessageHandlerResolvers;
-        }
-
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        /// <param name="multiMessageHandlerResolvers">List of multi message handler resolvers.</param>
-        public CompositeMessageHandlerResolver(IEnumerable<MultiMessageHandlerResolver> multiMessageHandlerResolvers, bool throwIfNoHandlerIsFound = true)
-        {
-            ThrowIfNoHandlerIsFound = throwIfNoHandlerIsFound;
-            _resolvers = multiMessageHandlerResolvers;
+            _resolvers = messageHandlerResolvers ?? throw new ArgumentNullException(nameof(messageHandlerResolvers));
         }
 
         #endregion Constructors
@@ -52,6 +32,10 @@ namespace Xer.Delegator.Resolvers
         /// This will try resolving a message handler delegate from all sources until a handler
         /// who is either not null or not equal to <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> is found.
         /// </summary>
+        /// <remarks>
+        /// If no handler is found, a <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> will be returned.
+        /// Any exceptions thrown by the other sources will be propagated.
+        /// </remarks>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <returns>Message handler delegate.</returns>
         public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
@@ -69,15 +53,14 @@ namespace Xer.Delegator.Resolvers
                         return messageHandlerDelegate;
                     }
                 }
-                
-                if(ThrowIfNoHandlerIsFound)
-                {
-                    // Throw if no handler is found from all sources.
-                    throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage));
-                }
 
                 // Return null handler that does nothing.
                 return NullMessageHandlerDelegate<TMessage>.Value;
+            }
+            catch(NoMessageHandlerResolvedException)
+            {
+                // If a source has thrown this exception, just rethrow.
+                throw;
             }
             catch(Exception ex)
             {

@@ -3,15 +3,15 @@ using System.Threading.Tasks;
 
 namespace Xer.Delegator
 {
-    public interface IMessageDispatcher
+    public interface IDelegator
     {
         /// <summary>
-        /// Dispatch message to handler.
+        /// Sends message to handler.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
-        /// <param name="message">Message to dispatch.</param>
+        /// <param name="message">Message to send.</param>
         /// <param name="cancellationToken">Optional cancellation token to be passed to handlers.</param>
         /// <returns>Asynchronous task which can be awaited for completion.</returns>
-        Task DispatchAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default(CancellationToken)) where TMessage : class;
+        Task SendAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default(CancellationToken)) where TMessage : class;
     }
 }

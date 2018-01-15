@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Xer.Delegator</id>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
     <title>Xer.Delegator</title>
     <authors>jeyjeyemem</authors>
     <owners>jeyjeyemem</owners>
@@ -12,7 +12,8 @@
     <description>A simple delegate-based message handling library.</description>
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
-      - Fixed typo in RequiredMessageHandlerResolver
+      - Renamed IMessageDispatcher to IDelegator and changed DispatchAsync method to SendAsync
+      - Modified CompositeMessageHandlerResolver to receive any list of IMessageHandlerResolver.
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Delegate Message Handling Library</tags>
