@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Xer.Delegator.Registrations
@@ -9,7 +10,7 @@ namespace Xer.Delegator.Registrations
     {
         #region Declarations
             
-        // IList is List<MessageHandlerDelegate<TMessage> where TMessage matches the Type in the dictionary key.
+        // IList value is a List<MessageHandlerDelegate<TMessage> where TMessage matches the Type in the dictionary key.
         private readonly IDictionary<Type, IList> _messageHandlersByMessageType = new Dictionary<Type, IList>();
 
         #endregion Declarations
@@ -31,7 +32,8 @@ namespace Xer.Delegator.Registrations
 
             Type messageType = typeof(TMessage);
 
-            // Check if a handler already exists.
+            // Check if a handler already exists. 
+            // Note: IList is a List<MessageHandlerDelegate<TMessage>>.
             if (_messageHandlersByMessageType.TryGetValue(messageType, out IList existingMessageHandlers))
             {
                 // Add message handler to existing list.
@@ -50,17 +52,29 @@ namespace Xer.Delegator.Registrations
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="messageHandlerDelegates">Message handler delegates.</param>
         /// <returns>True if message handler delegates are found. Otherwise, false.</returns>
-        public bool TryGetValue<TMessage>(out IEnumerable<MessageHandlerDelegate<TMessage>> messageHandlerDelegates) where TMessage : class
+        public bool TryGetValue<TMessage>(out IReadOnlyList<MessageHandlerDelegate<TMessage>> messageHandlerDelegates) where TMessage : class
         {
             if (_messageHandlersByMessageType.TryGetValue(typeof(TMessage), out IList storedMessageHandlers))
             {
-                // Cast object. Make sure to throw if casting fails.
-                messageHandlerDelegates = (IEnumerable<MessageHandlerDelegate<TMessage>>)storedMessageHandlers;
+                // Cast object. This should throw if casting fails, but we are sure that IList is a List<MessageHandlerDelegate<TMessage>>.
+                messageHandlerDelegates = (IReadOnlyList<MessageHandlerDelegate<TMessage>>)storedMessageHandlers;
                 return true;
             }
 
-            messageHandlerDelegates = Enumerable.Empty<MessageHandlerDelegate<TMessage>>();
+            messageHandlerDelegates = MessageHandlerDelagatesCache<TMessage>.Empty;
             return false;
+        }
+
+        /// <summary>
+        /// Used to cache empty message handler delegate collections.
+        /// </summary>
+        private static class MessageHandlerDelagatesCache<TMessage> where TMessage : class
+        {
+            /// <summary>
+            /// Cached empty collection
+            /// </summary>
+            public static readonly IReadOnlyList<MessageHandlerDelegate<TMessage>> Empty = 
+                new ReadOnlyCollection<MessageHandlerDelegate<TMessage>>(new MessageHandlerDelegate<TMessage>[0]);
         }
 
         #endregion Methods

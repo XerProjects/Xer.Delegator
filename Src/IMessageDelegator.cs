@@ -6,7 +6,7 @@ namespace Xer.Delegator
     public interface IMessageDelegator
     {
         /// <summary>
-        /// Sends message to handler.
+        /// Send message to a delegate with one/many handlers.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="message">Message to send.</param>

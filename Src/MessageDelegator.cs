@@ -29,7 +29,7 @@ namespace Xer.Delegator
         #region IMessageDispatcher Implementation
         
         /// <summary>
-        /// Sends message to handler.
+        /// Send message to a delegate with one/many handlers.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="message">Message to send.</param>
@@ -37,6 +37,11 @@ namespace Xer.Delegator
         /// <returns>Asynchronous task which can be awaited for completion.</returns>
         public Task SendAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default(CancellationToken)) where TMessage : class
         {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
             MessageHandlerDelegate<TMessage> messageHandler = _messageHandlerResolver.ResolveMessageHandler<TMessage>();
 
             if(messageHandler == null)

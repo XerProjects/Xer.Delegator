@@ -38,12 +38,22 @@ namespace Xer.Delegator.Resolvers
         /// <returns>Message handler delegate which invokes all registered delegates.</returns>
         public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
         {
-            if (_multiMessageHandlerDelegateStore.TryGetValue<TMessage>(out IEnumerable<MessageHandlerDelegate<TMessage>> messageHandlers))
+            if (_multiMessageHandlerDelegateStore.TryGetValue<TMessage>(out IReadOnlyList<MessageHandlerDelegate<TMessage>> messageHandlers))
             {
+                // Capture handlers into a variable to be used by the closure below.
+                IReadOnlyList<MessageHandlerDelegate<TMessage>> capturedHandlers = messageHandlers;
+
                 // Return a delegate that invokes all registered message handlers.
                 return (message, cancellationToken) =>
                 {
-                    IEnumerable<Task> handleTasks = messageHandlers.Select(m => m.Invoke(message, cancellationToken));
+                    // Task list.
+                    var handleTasks = new List<Task>(capturedHandlers.Count);
+
+                    // Invoke each message handler delegates to start the tasks and add to task list.
+                    for(int i = 0; i < capturedHandlers.Count; i++)
+                        handleTasks.Add(capturedHandlers[i].Invoke(message, cancellationToken));
+
+                    // Wait for all tasks to complete.
                     return Task.WhenAll(handleTasks);
                 };
             }
