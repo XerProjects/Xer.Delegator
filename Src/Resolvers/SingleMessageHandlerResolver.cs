@@ -1,9 +1,10 @@
 using System;
-using Xer.Delegator.Exceptions;
-using Xer.Delegator.Registrations;
 
 namespace Xer.Delegator.Resolvers
 {
+    /// <summary>
+    /// Represents an object that resolves a single instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/>.
+    /// </summary>
     public class SingleMessageHandlerResolver : IMessageHandlerResolver
     {
         #region Declarations
@@ -29,17 +30,18 @@ namespace Xer.Delegator.Resolvers
 
         /// <summary>
         /// Resolve a message handler delegate for the message type.
-        /// If no handler is found, a <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> is returned.
+        /// If no handler is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> is returned.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <returns>Message handler delegate.</returns>
         public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
         {
-            if (_singleMessageHandlerDelegateStore.TryGetValue<TMessage>(out MessageHandlerDelegate<TMessage> messageHandler))
+            if (_singleMessageHandlerDelegateStore.TryGetValue<TMessage>(out MessageHandlerDelegate<TMessage> messageHandlerDelegate))
             {
-                return messageHandler;
+                return messageHandlerDelegate;
             }
             
+            // Null message handler.
             return NullMessageHandlerDelegate<TMessage>.Value;
         }
 

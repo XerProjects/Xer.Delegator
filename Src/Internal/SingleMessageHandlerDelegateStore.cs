@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 
-namespace Xer.Delegator.Registrations
+namespace Xer.Delegator
 {
+    /// <summary>
+    /// Represents an object that stores a single <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/> that is mapped to a message type.
+    /// </summary>
     internal class SingleMessageHandlerDelegateStore
     {
         #region Declarations
             
-        public readonly IDictionary<Type, Delegate> _messageHandlersByMessageType = new Dictionary<Type, Delegate>();
+        public readonly Dictionary<Type, Delegate> _messageHandlersByMessageType = new Dictionary<Type, Delegate>();
 
         #endregion Declarations
 
@@ -39,6 +42,7 @@ namespace Xer.Delegator.Registrations
 
         /// <summary>
         /// Try to retrieve a single message handler delegate for the specified message type. 
+        /// If no message handler delegate is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}"/> is returned.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="messageHandlerDelegates">Message handler delegate.</param>

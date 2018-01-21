@@ -4,6 +4,9 @@ using Xer.Delegator.Resolvers;
 
 namespace Xer.Delegator.Registrations
 {
+    /// <summary>
+    /// Represents an object which only allows a single message handler delegate to be registered for a given message type.
+    /// </summary>
     public class SingleMessageHandlerRegistration : IMessageHandlerRegistration
     {
         #region Declarations

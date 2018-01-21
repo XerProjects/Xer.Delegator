@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Xer.Delegator
 {
+    /// <summary>
+    /// Represents an object that delegates messages to one or more message handlers.
+    /// </summary>
     public interface IMessageDelegator
     {
         /// <summary>

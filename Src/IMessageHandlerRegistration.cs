@@ -2,6 +2,9 @@ using System;
 
 namespace Xer.Delegator
 {
+    /// <summary>
+    /// Represents an object that handles registration of message handler delegates for given message types.
+    /// </summary>
     public interface IMessageHandlerRegistration
     {
         /// <summary>

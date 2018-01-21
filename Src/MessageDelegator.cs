@@ -5,6 +5,9 @@ using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator
 {
+    /// <summary>
+    /// Represents an object that delegates messages to one or more message handlers.
+    /// </summary>
     public class MessageDelegator : IMessageDelegator
     {
         #region Declarations
@@ -46,7 +49,7 @@ namespace Xer.Delegator
 
             if(messageHandler == null)
             {
-                throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage));
+                throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage));
             }
 
             return messageHandler.Invoke(message, cancellationToken);

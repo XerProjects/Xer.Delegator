@@ -4,6 +4,10 @@ using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator.Resolvers
 {
+    /// <summary>
+    /// Represents a decorator object that resolves an instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/>
+    /// from an internal collection of <see cref="Xer.Delegator.IMessageHandlerResolver"/> instances.
+    /// </summary>
     public class CompositeMessageHandlerResolver : IMessageHandlerResolver
     {
         #region Declarations
@@ -33,8 +37,8 @@ namespace Xer.Delegator.Resolvers
         /// who is either not null or not equal to <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> is found.
         /// </summary>
         /// <remarks>
-        /// If no handler is found, a <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> will be returned.
-        /// Any exceptions thrown by the other sources will be propagated.
+        /// If no handler is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value"/> is returned.
+        /// Any exceptions thrown by the internal resolvers will be propagated.
         /// </remarks>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <returns>Message handler delegate.</returns>
@@ -64,10 +68,24 @@ namespace Xer.Delegator.Resolvers
             }
             catch(Exception ex)
             {
-                throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage), ex);
+                throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage), ex);
             }
         }
 
         #endregion IMessageHandlerResolver Implementation
+
+        #region Methods
+        
+        /// <summary>
+        /// Create an instance of CompositeMessageHandlerResolver that is composed of all the given message handler resolvers.
+        /// </summary>
+        /// <param name="messageHandlerResolvers">Message handler resolvers to combine.</param>
+        /// <returns>Instance of CompositeMessageHandlerResolver that is composed of all the given message handler resolvers.</returns>
+        public static CompositeMessageHandlerResolver Compose(params IMessageHandlerResolver[] messageHandlerResolvers)
+        {
+            return new CompositeMessageHandlerResolver(messageHandlerResolvers);
+        }
+
+        #endregion Methods
     }
 }

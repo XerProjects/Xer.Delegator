@@ -6,6 +6,9 @@ using Xer.Delegator.Resolvers;
 
 namespace Xer.Delegator.Registrations
 {
+    /// <summary>
+    /// Represents an object which allows multiple message handler delegates to be registered for a given message type.
+    /// </summary>
     public class MultiMessageHandlerRegistration : IMessageHandlerRegistration
     {
         #region Declarations

@@ -3,6 +3,10 @@ using Xer.Delegator.Exceptions;
 
 namespace Xer.Delegator.Resolvers
 {
+    /// <summary>
+    /// Represents a decorator object that requires an instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/>
+    /// from an internal <see cref="Xer.Delegator.IMessageHandlerResolver"/> instance.
+    /// </summary>
     public class RequiredMessageHandlerResolver : IMessageHandlerResolver
     {
         #region Declarations
@@ -41,14 +45,14 @@ namespace Xer.Delegator.Resolvers
                 // Throw if resolved handler is a null message handler.
                 if(messageHandler == null || messageHandler == NullMessageHandlerDelegate<TMessage>.Value)
                 {
-                    throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage));
+                    throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage));
                 }
 
                 return messageHandler;
             }
             catch(Exception ex)
             {
-                throw NoMessageHandlerResolvedException.FromMessageType(typeof(TMessage), ex);
+                throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage), ex);
             }
         }
 

@@ -2,6 +2,9 @@ using System;
 
 namespace Xer.Delegator
 {
+    /// <summary>
+    /// Represents an object that resolves an instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/> for a given message type.
+    /// </summary>
     public interface IMessageHandlerResolver
     {
         /// <summary>
