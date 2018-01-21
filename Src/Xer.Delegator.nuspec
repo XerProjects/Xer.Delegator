@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Xer.Delegator</id>
-    <version>0.2.3</version>
+    <version>0.2.4</version>
     <title>Xer.Delegator</title>
     <authors>jeyjeyemem</authors>
     <owners>jeyjeyemem</owners>
@@ -13,6 +13,7 @@
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
       - Improved MultiMessageHandlerResolver performance.
+      - Added public API XML documentation
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Delegate Message Handling Library</tags>

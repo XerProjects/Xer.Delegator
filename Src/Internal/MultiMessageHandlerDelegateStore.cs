@@ -74,6 +74,8 @@ namespace Xer.Delegator
             return false;
         }
 
+        #endregion Methods
+
         #region Functions
         
         /// <summary>
@@ -87,7 +89,7 @@ namespace Xer.Delegator
             return (message, cancellationToken) =>
             {
                 // Task list.
-                var handleTasks = new Task[messageHandlerDelegates.Count];
+                Task[] handleTasks = new Task[messageHandlerDelegates.Count];
 
                 // Invoke each message handler delegates to start the tasks and add to task list.
                 for (int i = 0; i < messageHandlerDelegates.Count; i++)
@@ -99,7 +101,5 @@ namespace Xer.Delegator
         }
 
         #endregion Functions
-
-        #endregion Methods
     }
 }
