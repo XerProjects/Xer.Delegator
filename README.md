@@ -1,2 +1,171 @@
+
 # Xer.Delegator
-A simple delegate-based message routing library
+[![NuGet](https://img.shields.io/nuget/vpre/xer.delegator.svg)](https://www.nuget.org/packages/Xer.Delegator/)
+
+A lightweight in-process message handling library without the boilerplates!
+
+# Table of contents
+* [Installation](#installation)
+* [Getting Started](#getting-started)
+  * [ASPNET Core Startup Configuration](#aspnet-core-startup-configuration)
+  * [Message Sending](#message-sending)
+
+## Installation
+You can simply clone this repository, build the source, reference the output dll, and code away!
+
+The library has also been published as a Nuget package:
+* https://www.nuget.org/packages/Xer.Delegator/
+
+To install Nuget package:
+1. Open command prompt
+2. Go to project directory
+3. Add the package to the project:
+    ```csharp
+    dotnet add package Xer.Delegator
+    ```
+4. Restore the packages:
+    ```csharp
+    dotnet restore
+    ```
+
+## Getting Started
+
+### ASPNET Core Startup Configuration
+
+```csharp
+// This method gets called by the runtime. Use this method to add services to the container.
+public void ConfigureServices(IServiceCollection services)
+{
+    ...
+    // Register message handler resolver to the container. 
+    // This is resolved by the MessageDelegator.
+    services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
+    {
+        // Register command handlers to the message handler registration. 
+        // Commands can only have one handler so use SingleMessageHandlerRegistration.
+        SingleMessageHandlerRegistration commandHandlerRegistration = RegisterCommandHandlers(serviceProvider);
+
+        // Register event handlers to the message handler registration. 
+        // Events can have multiple handlers so use MultiMessageHandlerRegistration.
+        MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(serviceProvider);
+
+        // Combine command handlers and event handlers.
+        return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
+        {
+            commandHandlerRegistration.BuildMessageHandlerResolver(),
+            eventHandlerRegistration.BuildMessageHandlerResolver()
+        });
+    });
+
+    // Message delegator.
+    services.AddSingleton<IMessageDelegator, MessageDelegator>();
+    ...
+}
+
+// Register all command handlers
+private static SingleMessageHandlerRegistration RegisterCommandHandlers(IServiceProvider serviceProvider)
+{
+    // Register command handlers to the message handler registration. 
+    // Commands can only have one handler so use SingleMessageHandlerRegistration.
+    var commandHandlerRegistration = new SingleMessageHandlerRegistration();
+
+    // ActivateProductCommand
+    commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
+        return handler.HandleRegisterProductCommandAsync(message, ct);
+    });
+
+    // ActivateProductCommand
+    commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
+        return handler.HandleActivateProductCommandAsync(message, ct);
+    });
+
+    // DeactivateProductCommand
+    commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
+        return handler.HandleDeactivateProductCommandAsync(message, ct);
+    });
+
+    return commandHandlerRegistration;
+}
+
+// Register event handlers
+private static MultiMessageHandlerRegistration RegisterEventHandlers(IServiceProvider serviceProvider)
+{
+    // Register event handlers to the message handler registration. 
+    // Events can have multiple handlers so use MultiMessageHandlerRegistration.
+    var eventHandlerRegistration = new MultiMessageHandlerRegistration();
+    
+    // In the sample, all events are published as IDomainEvent by the PublishingRepository,
+    // so register event handlers for IDomainEvent and check if domain event can be handled.
+
+    // ProductRegisteredEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductRegisteredEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    // ProductActivatedEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductActivatedEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductActivatedEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    // ProductDeactivatedEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductDeactivatedEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    return eventHandlerRegistration;
+}
+```
+
+### Message Sending
+All messages can be sent to one or more message handlers through the MessageDelegator.SendAsync method.
+
+```csharp
+// Inject in controller contructor.
+private readonly IMessageDelegator _messageDelegator;
+
+[HttpPost]
+public async Task<IActionResult> RegisterProduct([FromBody]RegisterProductCommandDto model)
+{
+    // Convert DTO to domain command.
+    RegisterProductCommand command = model.ToDomainCommand();
+    // Send command message to handler.
+    await _messageDelegator.SendAsync(command);
+    return Ok();
+}
+```
