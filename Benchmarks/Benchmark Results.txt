@@ -1,0 +1,40 @@
+
+## Benchmarks: 
+
+Multiple Message Handler: (100,000 registered message handlers)
+
+``` ini
+
+BenchmarkDotNet=v0.10.12, OS=Windows 10 Redstone 3 [1709, Fall Creators Update] (10.0.16299.192)
+Intel Core i5-4 Hz, Resolution=377.5816 ns, Timer=TSC
+.NET Core SDK=2.1.3
+  [Host]     : .7200U CPU 2.50GHz (Kaby Lake), 1 CPU, 4 logical cores and 2 physical cores
+Frequency=264843NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+  DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+
+
+```
+|             Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
+|------------------- |---------:|----------:|----------:|---------:|---------:|---------:|----------:|
+| BenchmarkDelegator | 4.980 ms | 0.0251 ms | 0.0209 ms |  62.5000 |  62.5000 |  62.5000 |   1.53 MB |
+|  BenchmarkCqrsLite | 7.321 ms | 0.1119 ms | 0.0935 ms | 179.6875 | 101.5625 | 101.5625 |   2.76 MB |
+|   BenchmarkMediatr | 8.082 ms | 0.0934 ms | 0.0873 ms | 187.5000 | 109.3750 | 109.3750 |   2.76 MB |
+
+Single Message Handler:
+
+``` ini
+
+BenchmarkDotNet=v0.10.12, OS=Windows 10 Redstone 3 [1709, Fall Creators Update] (10.0.16299.192)
+Intel Core i5-7200U CPU 2.50GHz (Kaby Lake), 1 CPU, 4 logical cores and 2 physical cores
+Frequency=2648434 Hz, Resolution=377.5816 ns, Timer=TSC
+.NET Core SDK=2.1.3
+  [Host]     : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+  DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+
+
+```
+|             Method |      Mean |     Error |    StdDev |  Gen 0 | Allocated |
+|------------------- |----------:|----------:|----------:|-------:|----------:|
+| BenchmarkDelegator |  59.36 ns | 0.1854 ns | 0.1548 ns | 0.0151 |      24 B |
+|  BenchmarkCqrsLite |  49.45 ns | 0.1843 ns | 0.1633 ns | 0.0152 |      24 B |
+|   BenchmarkMediatr | 739.49 ns | 1.9199 ns | 1.4989 ns | 0.3099 |     488 B |
