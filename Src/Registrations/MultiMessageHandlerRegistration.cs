@@ -35,27 +35,6 @@ namespace Xer.Delegator.Registrations
             _messageHandlersByMessageType.Add<TMessage>(messageHandler);
         }
 
-        /// <summary>
-        /// Register a synchronous message handler delegate for the specified message type. 
-        /// This will add the message handler delegate to an internal collection of delegates.
-        /// </summary>
-        /// <typeparam name="TMessage">Type of message.</typeparam>
-        /// <param name="messageHandlerDelegate">Synchronous message handler delegate.</param>
-        public void Register<TMessage>(Action<TMessage> messageHandler) where TMessage : class
-        {
-            if (messageHandler == null)
-            {
-                throw new ArgumentNullException(nameof(messageHandler));
-            }
-            
-            // Convert to async delegate.
-            Register<TMessage>((message, ct) =>
-            {
-                messageHandler.Invoke(message);
-                return TaskUtility.CompletedTask;
-            });
-        }
-
         #endregion IMessageHandlerRegistration Implementation
 
         #region Methods
