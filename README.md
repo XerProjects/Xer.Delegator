@@ -1,44 +1,171 @@
+
 # Xer.Delegator
-A simple delegate-based message routing library
+[![NuGet](https://img.shields.io/nuget/vpre/xer.delegator.svg)](https://www.nuget.org/packages/Xer.Delegator/)
 
-See samples for more info. Getting started coming soon. :)
+A lightweight in-process message handling library without the boilerplates!
 
-Benchmarks: 
+# Table of contents
+* [Installation](#installation)
+* [Getting Started](#getting-started)
+  * [ASPNET Core Startup Configuration](#aspnet-core-startup-configuration)
+  * [Message Sending](#message-sending)
 
-Event Handling: (100,000 registered event handlers)
+## Installation
+You can simply clone this repository, build the source, reference the output dll, and code away!
 
-``` ini
+The library has also been published as a Nuget package:
+* https://www.nuget.org/packages/Xer.Delegator/
 
-BenchmarkDotNet=v0.10.12, OS=Windows 10 Redstone 3 [1709, Fall Creators Update] (10.0.16299.192)
-Intel Core i5-4 Hz, Resolution=377.5816 ns, Timer=TSC
-.NET Core SDK=2.1.3
-  [Host]     : .7200U CPU 2.50GHz (Kaby Lake), 1 CPU, 4 logical cores and 2 physical cores
-Frequency=264843NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
-  DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+To install Nuget package:
+1. Open command prompt
+2. Go to project directory
+3. Add the package to the project:
+    ```csharp
+    dotnet add package Xer.Delegator
+    ```
+4. Restore the packages:
+    ```csharp
+    dotnet restore
+    ```
 
+## Getting Started
 
+### ASPNET Core Startup Configuration
+
+```csharp
+// This method gets called by the runtime. Use this method to add services to the container.
+public void ConfigureServices(IServiceCollection services)
+{
+    ...
+    // Register message handler resolver to the container. 
+    // This is resolved by the MessageDelegator.
+    services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
+    {
+        // Register command handlers to the message handler registration. 
+        // Commands can only have one handler so use SingleMessageHandlerRegistration.
+        SingleMessageHandlerRegistration commandHandlerRegistration = RegisterCommandHandlers(serviceProvider);
+
+        // Register event handlers to the message handler registration. 
+        // Events can have multiple handlers so use MultiMessageHandlerRegistration.
+        MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(serviceProvider);
+
+        // Combine command handlers and event handlers.
+        return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
+        {
+            commandHandlerRegistration.BuildMessageHandlerResolver(),
+            eventHandlerRegistration.BuildMessageHandlerResolver()
+        });
+    });
+
+    // Message delegator.
+    services.AddSingleton<IMessageDelegator, MessageDelegator>();
+    ...
+}
+
+// Register all command handlers
+private static SingleMessageHandlerRegistration RegisterCommandHandlers(IServiceProvider serviceProvider)
+{
+    // Register command handlers to the message handler registration. 
+    // Commands can only have one handler so use SingleMessageHandlerRegistration.
+    var commandHandlerRegistration = new SingleMessageHandlerRegistration();
+
+    // ActivateProductCommand
+    commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
+        return handler.HandleRegisterProductCommandAsync(message, ct);
+    });
+
+    // ActivateProductCommand
+    commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
+        return handler.HandleActivateProductCommandAsync(message, ct);
+    });
+
+    // DeactivateProductCommand
+    commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+    {
+        var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
+        return handler.HandleDeactivateProductCommandAsync(message, ct);
+    });
+
+    return commandHandlerRegistration;
+}
+
+// Register event handlers
+private static MultiMessageHandlerRegistration RegisterEventHandlers(IServiceProvider serviceProvider)
+{
+    // Register event handlers to the message handler registration. 
+    // Events can have multiple handlers so use MultiMessageHandlerRegistration.
+    var eventHandlerRegistration = new MultiMessageHandlerRegistration();
+    
+    // In the sample, all events are published as IDomainEvent by the PublishingRepository,
+    // so register event handlers for IDomainEvent and check if domain event can be handled.
+
+    // ProductRegisteredEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductRegisteredEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    // ProductActivatedEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductActivatedEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductActivatedEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    // ProductDeactivatedEvent
+    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+    {
+        ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
+        if (domainEvent != null)
+        {
+            // Handle only if domain event is a ProductDeactivatedEvent.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
+        }
+
+        // Do nothing.
+        return Task.CompletedTask;
+    });
+
+    return eventHandlerRegistration;
+}
 ```
-|             Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
-|------------------- |---------:|----------:|----------:|---------:|---------:|---------:|----------:|
-| BenchmarkDelegator | 4.980 ms | 0.0251 ms | 0.0209 ms |  62.5000 |  62.5000 |  62.5000 |   1.53 MB |
-|  BenchmarkCqrsLite | 7.321 ms | 0.1119 ms | 0.0935 ms | 179.6875 | 101.5625 | 101.5625 |   2.76 MB |
-|   BenchmarkMediatr | 8.082 ms | 0.0934 ms | 0.0873 ms | 187.5000 | 109.3750 | 109.3750 |   2.76 MB |
 
-Command Handling: (1 registered command handler)
+### Message Sending
+All messages can be sent to one or more message handlers through the MessageDelegator.SendAsync method.
 
-``` ini
+```csharp
+// Inject in controller contructor.
+private readonly IMessageDelegator _messageDelegator;
 
-BenchmarkDotNet=v0.10.12, OS=Windows 10 Redstone 3 [1709, Fall Creators Update] (10.0.16299.192)
-Intel Core i5-7200U CPU 2.50GHz (Kaby Lake), 1 CPU, 4 logical cores and 2 physical cores
-Frequency=2648434 Hz, Resolution=377.5816 ns, Timer=TSC
-.NET Core SDK=2.1.3
-  [Host]     : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
-  DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
-
-
+[HttpPost]
+public async Task<IActionResult> RegisterProduct([FromBody]RegisterProductCommandDto model)
+{
+    // Convert DTO to domain command.
+    RegisterProductCommand command = model.ToDomainCommand();
+    // Send command message to handler.
+    await _messageDelegator.SendAsync(command);
+    return Ok();
+}
 ```
-|             Method |      Mean |     Error |    StdDev |  Gen 0 | Allocated |
-|------------------- |----------:|----------:|----------:|-------:|----------:|
-| BenchmarkDelegator |  59.36 ns | 0.1854 ns | 0.1548 ns | 0.0151 |      24 B |
-|  BenchmarkCqrsLite |  49.45 ns | 0.1843 ns | 0.1633 ns | 0.0152 |      24 B |
-|   BenchmarkMediatr | 739.49 ns | 1.9199 ns | 1.4989 ns | 0.3099 |     488 B |
