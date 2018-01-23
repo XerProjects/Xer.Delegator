@@ -5,10 +5,16 @@
 A lightweight in-process message handling library without the boilerplates!
 
 # Table of contents
+* [What is it?](#what-is-it)
 * [Installation](#installation)
 * [Getting Started](#getting-started)
-  * [ASPNET Core Startup Configuration](#aspnet-core-startup-configuration)
-  * [Message Sending](#message-sending)
+  * [ASP.NET Core](#aspnet-core)
+  * [Sending Messages](#sending-messages)
+
+## What is it?
+This library is developed with a goal to help developers speed up the development of applications by minimizing boilerplates in the code. No message marker interfaces, no message handler interfaces, no pipelines, etc - just define a message class, hook up delegates, and you're good to go!
+
+This makes the library suitable for building prototypes/proof of concept applications, but at the same time, also serve as a lightweight base for your own messaging infrastructure.
 
 ## Installation
 You can simply clone this repository, build the source, reference the output dll, and code away!
@@ -29,10 +35,13 @@ To install Nuget package:
     ```
 
 ## Getting Started
+The samples follows the CQRS pattern so you will see commands, events, etc.
 
-### ASPNET Core Startup Configuration
+### ASP.NET Core
 
 ```csharp
+// Startup.cs
+
 // This method gets called by the runtime. Use this method to add services to the container.
 public void ConfigureServices(IServiceCollection services)
 {
@@ -41,23 +50,18 @@ public void ConfigureServices(IServiceCollection services)
     // This is resolved by the MessageDelegator.
     services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
     {
-        // Register command handlers to the message handler registration. 
-        // Commands can only have one handler so use SingleMessageHandlerRegistration.
         SingleMessageHandlerRegistration commandHandlerRegistration = RegisterCommandHandlers(serviceProvider);
-
-        // Register event handlers to the message handler registration. 
-        // Events can have multiple handlers so use MultiMessageHandlerRegistration.
         MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(serviceProvider);
 
-        // Combine command handlers and event handlers.
+        // Combine command handlers and event handlers into a single message handler resolver.
         return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
         {
             commandHandlerRegistration.BuildMessageHandlerResolver(),
             eventHandlerRegistration.BuildMessageHandlerResolver()
         });
     });
-
-    // Message delegator.
+    
+    // Register message delegator to the container. 
     services.AddSingleton<IMessageDelegator, MessageDelegator>();
     ...
 }
@@ -152,10 +156,12 @@ private static MultiMessageHandlerRegistration RegisterEventHandlers(IServicePro
 }
 ```
 
-### Message Sending
+### Sending Messages
 All messages can be sent to one or more message handlers through the MessageDelegator.SendAsync method.
 
 ```csharp
+// ProductController.cs
+
 // Inject in controller contructor.
 private readonly IMessageDelegator _messageDelegator;
 
