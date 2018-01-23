@@ -9,7 +9,8 @@ A lightweight in-process message handling library without the boilerplates!
 * [Installation](#installation)
 * [Getting Started](#getting-started)
   * [ASP.NET Core](#aspnet-core)
-  * [Sending Messages](#sending-messages)
+    * [Startup Configuration](#startup-configuration)
+    * [Sending Messages](#sending-messages)
 
 ## What is it?
 This library is developed with a goal to help developers speed up the development of applications by minimizing boilerplates in the code. No message marker interfaces, no message handler interfaces, no pipelines, etc - just define a message class, hook up delegates, and you're good to go!
@@ -38,6 +39,7 @@ To install Nuget package:
 The samples follows the CQRS pattern so you will see commands, events, etc.
 
 ### ASP.NET Core
+#### Startup Configuration
 
 ```csharp
 // Startup.cs
@@ -73,7 +75,7 @@ private static SingleMessageHandlerRegistration RegisterCommandHandlers(IService
     // Commands can only have one handler so use SingleMessageHandlerRegistration.
     var commandHandlerRegistration = new SingleMessageHandlerRegistration();
 
-    // ActivateProductCommand
+    // RegisterProductCommand
     commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
     {
         var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
@@ -155,9 +157,8 @@ private static MultiMessageHandlerRegistration RegisterEventHandlers(IServicePro
     return eventHandlerRegistration;
 }
 ```
-
-### Sending Messages
-All messages can be sent to one or more message handlers through the MessageDelegator.SendAsync method.
+#### Sending Messages
+All messages can be sent to one or more message handlers through the MessageDelegator's SendAsync API.
 
 ```csharp
 // ProductController.cs
