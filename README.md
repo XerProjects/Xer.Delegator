@@ -8,9 +8,10 @@ A lightweight in-process message handling library without the boilerplates!
 * [What is it?](#what-is-it)
 * [Installation](#installation)
 * [Getting Started](#getting-started)
-  * [ASP.NET Core](#aspnet-core)
-    * [Startup Configuration](#startup-configuration)
-    * [Sending Messages](#sending-messages)
+  * [Message Handler Registration](#message-handler-registration)
+    * [Single Message Handler](#single-message-handler)
+    * [Multiple Message Handlers](#multiple-message-handlers)
+  * [Delegating Messages](#delegating-messages)
 
 ## What is it?
 This library is developed with a goal to help developers speed up the development of applications by minimizing boilerplates in the code. No message marker interfaces, no message handler interfaces, no pipelines, etc - just define a message class, hook up delegates, and you're good to go!
@@ -38,8 +39,8 @@ To install Nuget package:
 ## Getting Started
 The samples follows the CQRS pattern so you will see commands, events, etc.
 
-### ASP.NET Core
-#### Startup Configuration
+### Message Handler Registration
+#### Single Message Handler
 
 ```csharp
 // Startup.cs
@@ -52,119 +53,136 @@ public void ConfigureServices(IServiceCollection services)
     // This is resolved by the MessageDelegator.
     services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
     {
-        SingleMessageHandlerRegistration commandHandlerRegistration = RegisterCommandHandlers(serviceProvider);
-        MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(serviceProvider);
+        // Register command handlers to the message handler registration. 
+        // Commands can only have one handler so use SingleMessageHandlerRegistration.
+        var commandHandlerRegistration = new SingleMessageHandlerRegistration();
 
-        // Combine command handlers and event handlers into a single message handler resolver.
-        return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
+        // RegisterProductCommand
+        commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
         {
-            commandHandlerRegistration.BuildMessageHandlerResolver(),
-            eventHandlerRegistration.BuildMessageHandlerResolver()
+            var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
+            return handler.HandleRegisterProductCommandAsync(message, ct);
         });
+
+        // ActivateProductCommand
+        commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+        {
+            var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
+            return handler.HandleActivateProductCommandAsync(message, ct);
+        });
+
+        // DeactivateProductCommand
+        commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+        {
+            var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
+            return handler.HandleDeactivateProductCommandAsync(message, ct);
+        });
+
+        return commandHandlerRegistration.BuildMessageHandlerResolver();
     });
     
     // Register message delegator to the container. 
-    services.AddSingleton<IMessageDelegator, MessageDelegator>();
+    // This can be simply be: services.AddSingleton<IMessageDelegator, MessageDelegator>(), 
+    // but I wanted to clearly show that MessageDelegator depends on IMessageHandlerResolver.
+    services.AddSingleton<IMessageDelegator, MessageDelegator>((serviceProvider) =>
+        // Get the registered instance of IMessageHandlerResolver shown above.
+        new MessageDelegator(serviceProvider.GetRequiredService<IMessageHandlerResolver>())
+    );
     ...
 }
+```
 
-// Register all command handlers
-private static SingleMessageHandlerRegistration RegisterCommandHandlers(IServiceProvider serviceProvider)
+#### Multiple Message Handlers
+
+```csharp
+// Startup.cs
+
+// This method gets called by the runtime. Use this method to add services to the container.
+public void ConfigureServices(IServiceCollection services)
 {
-    // Register command handlers to the message handler registration. 
-    // Commands can only have one handler so use SingleMessageHandlerRegistration.
-    var commandHandlerRegistration = new SingleMessageHandlerRegistration();
-
-    // RegisterProductCommand
-    commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+    ...
+    // Register message handler resolver to the container. 
+    // This is resolved by the MessageDelegator.
+    services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
     {
-        var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
-        return handler.HandleRegisterProductCommandAsync(message, ct);
+        // Register event handlers to the message handler registration. 
+        // Events can have multiple handlers so use MultiMessageHandlerRegistration.
+        var eventHandlerRegistration = new MultiMessageHandlerRegistration();
+
+        // In the sample, all events are published as IDomainEvent by the PublishingRepository,
+        // so register event handlers for IDomainEvent and check if domain event can be handled.
+
+        // ProductRegisteredEvent
+        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        {
+            ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
+            if (domainEvent != null)
+            {
+                // Handle only if domain event is a ProductRegisteredEvent.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
+            }
+
+            // Do nothing.
+            return Task.CompletedTask;
+        });
+
+        // ProductActivatedEvent
+        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        {
+            ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
+            if (domainEvent != null)
+            {
+                // Handle only if domain event is a ProductActivatedEvent.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductActivatedEventAsync(domainEvent, ct);
+            }
+
+            // Do nothing.
+            return Task.CompletedTask;
+        });
+
+        // ProductDeactivatedEvent
+        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        {
+            ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
+            if (domainEvent != null)
+            {
+                // Handle only if domain event is a ProductDeactivatedEvent.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
+            }
+
+            // Do nothing.
+            return Task.CompletedTask;
+        });
+
+        return eventHandlerRegistration.BuildMessageHandlerResolver();
     });
-
-    // ActivateProductCommand
-    commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
-    {
-        var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
-        return handler.HandleActivateProductCommandAsync(message, ct);
-    });
-
-    // DeactivateProductCommand
-    commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
-    {
-        var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
-        return handler.HandleDeactivateProductCommandAsync(message, ct);
-    });
-
-    return commandHandlerRegistration;
-}
-
-// Register event handlers
-private static MultiMessageHandlerRegistration RegisterEventHandlers(IServiceProvider serviceProvider)
-{
-    // Register event handlers to the message handler registration. 
-    // Events can have multiple handlers so use MultiMessageHandlerRegistration.
-    var eventHandlerRegistration = new MultiMessageHandlerRegistration();
     
-    // In the sample, all events are published as IDomainEvent by the PublishingRepository,
-    // so register event handlers for IDomainEvent and check if domain event can be handled.
-
-    // ProductRegisteredEvent
-    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
-    {
-        ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
-        if (domainEvent != null)
-        {
-            // Handle only if domain event is a ProductRegisteredEvent.
-            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-            return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
-        }
-
-        // Do nothing.
-        return Task.CompletedTask;
-    });
-
-    // ProductActivatedEvent
-    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
-    {
-        ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
-        if (domainEvent != null)
-        {
-            // Handle only if domain event is a ProductActivatedEvent.
-            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-            return handler.HandleProductActivatedEventAsync(domainEvent, ct);
-        }
-
-        // Do nothing.
-        return Task.CompletedTask;
-    });
-
-    // ProductDeactivatedEvent
-    eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
-    {
-        ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
-        if (domainEvent != null)
-        {
-            // Handle only if domain event is a ProductDeactivatedEvent.
-            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-            return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
-        }
-
-        // Do nothing.
-        return Task.CompletedTask;
-    });
-
-    return eventHandlerRegistration;
+    // Register message delegator to the container. 
+    // This can be simply be: services.AddSingleton<IMessageDelegator, MessageDelegator>(), 
+    // but I wanted to clearly show that MessageDelegator depends on IMessageHandlerResolver.
+    services.AddSingleton<IMessageDelegator, MessageDelegator>((serviceProvider) =>
+        // Get the registered instance of IMessageHandlerResolver shown above.
+        new MessageDelegator(serviceProvider.GetRequiredService<IMessageHandlerResolver>())
+    );
+    ...
 }
 ```
-#### Sending Messages
-All messages can be sent to one or more message handlers through the MessageDelegator's SendAsync API.
+
+#### Delegating Messages
+All messages can be delegated to one or more message handlers through the MessageDelegator's SendAsync API.
 
 ```csharp
 // ProductController.cs
 
-// Inject in controller contructor.
 private readonly IMessageDelegator _messageDelegator;
+
+public ProductController(IMessageDelegator messageDelegator)
+{
+    _messageDelegator = messageDelegator;
+}
 
 [HttpPost]
 public async Task<IActionResult> RegisterProduct([FromBody]RegisterProductCommandDto model)
