@@ -19,7 +19,7 @@ namespace ConsoleApp.UseCases
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            int productId = RequestInput<int>("Enter product ID:", input =>
+            int productId = RequestInput<int>("Enter ID of product to activate:", input =>
             {
                 if(int.TryParse(input, out int i))
                 {

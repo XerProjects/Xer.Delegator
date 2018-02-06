@@ -1,20 +1,20 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Xer.Delegator
 {
     /// <summary>
-    /// Represents an object which stores a collection of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/>  that are mapped to a message type.
+    /// Represents an object which stores a collection of <see cref="Xer.Delegator.MessageHandlerDelegate"/>  that are mapped to a message type.
     /// </summary>
     internal class MultiMessageHandlerDelegateStore
     {
         #region Declarations
-            
-        // IList value is a List<MessageHandlerDelegate<TMessage> where TMessage matches the Type in the dictionary key.
-        private readonly Dictionary<Type, IList> _messageHandlersByMessageType = new Dictionary<Type, IList>();
 
+        // This dictionary contains all the message handler delegates that are registered for a message type.
+        private readonly Dictionary<Type, MessageHandlerContainer> _messageHandlersByMessageType = new Dictionary<Type, MessageHandlerContainer>();
+        
         #endregion Declarations
 
         #region Methods
@@ -24,27 +24,29 @@ namespace Xer.Delegator
         /// This will add the message handler delegate to an internal collection of delegates.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
-        /// <param name="messageHandlerDelegate">Message handler delegate.</param>
-        public void Add<TMessage>(MessageHandlerDelegate<TMessage> messageHandlerDelegate) where TMessage : class
+        /// <param name="messageHandler">Asynchronous message handler delegate.</param>
+        public void Add<TMessage>(Func<TMessage, CancellationToken, Task> messageHandlerDelegate) where TMessage : class
         {
             if (messageHandlerDelegate == null)
-            {   
+            {
                 throw new ArgumentNullException(nameof(messageHandlerDelegate));
             }
 
+            // Build message handler.
+            MessageHandlerDelegate handler = BuildMessageHandlerDelegate(messageHandlerDelegate);
+
             Type messageType = typeof(TMessage);
 
-            // Check if a handler already exists. 
-            // Note: IList is a List<MessageHandlerDelegate<TMessage>>.
-            if (_messageHandlersByMessageType.TryGetValue(messageType, out IList existingMessageHandlers))
+            // Check if a container already exists. 
+            if (_messageHandlersByMessageType.TryGetValue(messageType, out MessageHandlerContainer container))
             {
-                // Add message handler to existing list.
-                existingMessageHandlers.Add(messageHandlerDelegate);
+                // Add message handler to existing container list.
+                container.AddMessageHandler(handler);
             }
             else
             {
-                // Instantiate new list and add to dictionary.
-                _messageHandlersByMessageType.Add(messageType, new List<MessageHandlerDelegate<TMessage>>(1) { messageHandlerDelegate });
+                // Instantiate new container and add to dictionary.
+                _messageHandlersByMessageType.Add(messageType, new MessageHandlerContainer(messageType).AddMessageHandler(handler));
             }
         }
 
@@ -52,54 +54,139 @@ namespace Xer.Delegator
         /// Try to retrieve a message handler delegate for the specified message type.
         /// The message handler delegate that this method returns is actually a delegate that invokes
         /// a collection of internal message handler delegates that are registered/added for the specified message type.
-        /// If no message handler delegate is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}"/> is returned.
+        /// If no message handler delegate is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate.Instance"/> is returned.
         /// </summary>
-        /// <typeparam name="TMessage">Type of message.</typeparam>
-        /// <param name="messageHandlerDelegates">Message handler delegates.</param>
+        /// <param name="messageType">Type of message.</param>
+        /// <param name="messageHandlerDelegate">Message handler delegate.</param>
         /// <returns>
         /// True if a message handler delegate is found, which means that there is atleast 
         /// one message handler delegate that is registered/added for the specified message type. Otherwise, false.
         /// </returns>
-        public bool TryGetValue<TMessage>(out MessageHandlerDelegate<TMessage> messageHandlerDelegate) where TMessage : class
+        public bool TryGetMessageHandlerDelegate(Type messageType, out MessageHandlerDelegate messageHandlerDelegate)
         {
-            if (_messageHandlersByMessageType.TryGetValue(typeof(TMessage), out IList storedMessageHandlers))
+            if (_messageHandlersByMessageType.TryGetValue(messageType, out MessageHandlerContainer container))
             {
-                // Build message handler delegate.
-                // Cast object. This should throw if casting fails, but we are sure that IList is a List<MessageHandlerDelegate<TMessage>>.
-                messageHandlerDelegate = BuildMessageHandlerDelegate((List<MessageHandlerDelegate<TMessage>>)storedMessageHandlers);
+                messageHandlerDelegate = container.MergedMessageHandler;
                 return true;
             }
 
-            messageHandlerDelegate = NullMessageHandlerDelegate<TMessage>.Value;
+            messageHandlerDelegate = NullMessageHandlerDelegate.Instance;
             return false;
         }
 
         #endregion Methods
 
         #region Functions
-        
+
         /// <summary>
-        /// 
+        /// Build message handler delegate.
         /// </summary>
-        /// <param name="messageHandlerDelegates"></param>
-        /// <returns></returns>
-        private static MessageHandlerDelegate<TMessage> BuildMessageHandlerDelegate<TMessage>(List<MessageHandlerDelegate<TMessage>> messageHandlerDelegates) where TMessage : class
+        /// <param name="messageHandlerDelegate">Type safe message handler delegate.</param>
+        /// <returns>Message handler delegate.</returns>
+        private static MessageHandlerDelegate BuildMessageHandlerDelegate<TMessage>(Func<TMessage, CancellationToken, Task> messageHandlerDelegate) 
+            where TMessage : class
         {
-            // Return a delegate that invokes all registered message handlers.
             return (message, cancellationToken) =>
             {
-                // Task list.
-                Task[] handleTasks = new Task[messageHandlerDelegates.Count];
+                if (message == null) throw new ArgumentNullException(nameof(message));
 
-                // Invoke each message handler delegates to start the tasks and add to task list.
-                for (int i = 0; i < messageHandlerDelegates.Count; i++)
-                    handleTasks[i] = messageHandlerDelegates[i].Invoke(message, cancellationToken);
+                // Only invoke if object is of correct message type.
+                if (message is TMessage typedMessage)
+                {
+                    return messageHandlerDelegate.Invoke(typedMessage, cancellationToken);
+                }
 
-                // Wait for all tasks to complete.
-                return Task.WhenAll(handleTasks);
+                throw new ArgumentException($"Message argument does not match expected message type: {typeof(TMessage).Name}.", nameof(message));
             };
         }
 
         #endregion Functions
+
+        #region Inner Class
+        
+        private class MessageHandlerContainer
+        {
+            #region Declarations
+
+            private MessageHandlerDelegate _mergedMessageHandler = NullMessageHandlerDelegate.Instance;
+            private List<MessageHandlerDelegate> _messageHandlerDelegates = new List<MessageHandlerDelegate>();
+
+            #endregion Declarations
+
+            #region Properties
+
+            /// <summary>
+            /// Type of message that the handlers are handling.
+            /// </summary>
+            public Type MessageType { get; }
+
+            /// <summary>
+            /// List of message handlers for the specified message.
+            /// </summary>
+            public IReadOnlyList<MessageHandlerDelegate> MessageHandlers => _messageHandlerDelegates;
+
+            /// <summary>
+            /// Provides a merged message handler delegate that invokes all the listed message handler delegates in a single invocation.
+            /// </summary>
+            public MessageHandlerDelegate MergedMessageHandler => _mergedMessageHandler;
+
+            #endregion Properties
+
+            #region Constructors
+
+            /// <summary>
+            /// Constructor.
+            /// </summary>
+            /// <param name="messageType">Type of message.</param>
+            public MessageHandlerContainer(Type messageType)
+            {
+                MessageType = messageType;
+            }
+
+            #endregion Constructors
+
+            #region Methods
+
+            /// <summary>
+            /// Add a message handler to the list and to the MergedMessageHandler property. 
+            /// </summary>
+            /// <param name="messageHandlerDelegate">Message handler delegate.</param>
+            public MessageHandlerContainer AddMessageHandler(MessageHandlerDelegate messageHandlerDelegate)
+            {
+                _messageHandlerDelegates.Add(messageHandlerDelegate);
+
+                // Re-merge to include newly added message handler.
+                MergeMessageHandlers();
+
+                return this;
+            }
+
+            /// <summary>
+            /// Merge all message handler delegates into a single delegate and assign to MergedMessageHandler property.
+            /// </summary>
+            private void MergeMessageHandlers()
+            {
+                if(_messageHandlerDelegates.Count > 0)
+                {
+                    // Create a delegate that invokes all registered message handlers.
+                    _mergedMessageHandler = (message, cancellationToken) =>
+                    {
+                        // Task list.
+                        Task[] handleTasks = new Task[_messageHandlerDelegates.Count];
+
+                        // Invoke each message handler delegates to start the tasks and add to task list.
+                        for (int i = 0; i < _messageHandlerDelegates.Count; i++)
+                            handleTasks[i] = _messageHandlerDelegates[i].Invoke(message, cancellationToken);
+
+                        // Wait for all tasks to complete.
+                        return Task.WhenAll(handleTasks);
+                    };
+                }
+            }
+
+            #endregion Methods
+        }
+
+        #endregion Inner Class
     }
 }

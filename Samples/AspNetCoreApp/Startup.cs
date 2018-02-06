@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Domain;
 using Domain.Commands;
 using Domain.DomainEvents;
 using Domain.Repositories;
@@ -12,8 +8,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ReadSide.Products.Repositories;
 using Swashbuckle.AspNetCore.Swagger;
 using Xer.Delegator;
@@ -61,7 +55,7 @@ namespace AspNetCoreApp
 
             // Write side repository.
             services.AddSingleton<IProductRepository>((serviceProvider) =>
-                // Use in=memory repository, decorated by a PublishingProductRepository which publishes domain events from the Product.
+                // Use in-memory repository, decorated by a PublishingProductRepository which publishes domain events from the Product aggregate root.
                 new PublishingProductRepository(new InMemoryProductRepository(), serviceProvider.GetRequiredService<IMessageDelegator>())
             );
 
@@ -107,24 +101,27 @@ namespace AspNetCoreApp
             var commandHandlerRegistration = new SingleMessageHandlerRegistration();
 
             // ActivateProductCommand
-            commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<RegisterProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
-                return handler.HandleRegisterProductCommandAsync(message, ct);
+                return handler.HandleRegisterProductCommandAsync(message, cancellationToken);
             });
 
             // ActivateProductCommand
-            commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<ActivateProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
-                return handler.HandleActivateProductCommandAsync(message, ct);
+                return handler.HandleActivateProductCommandAsync(message, cancellationToken);
             });
 
             // DeactivateProductCommand
-            commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<DeactivateProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
-                return handler.HandleDeactivateProductCommandAsync(message, ct);
+                return handler.HandleDeactivateProductCommandAsync(message, cancellationToken);
             });
 
             return commandHandlerRegistration;
@@ -137,48 +134,27 @@ namespace AspNetCoreApp
             var eventHandlerRegistration = new MultiMessageHandlerRegistration();
 
             // ProductRegisteredEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductRegisteredEvent>((message, cancellationToken) =>
             {
-                ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductRegisteredEvent.
-                    var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                    return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductRegisteredEventAsync(message, cancellationToken);
             });
 
             // ProductActivatedEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductActivatedEvent>((message, cancellationToken) =>
             {
-                ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductActivatedEvent.
-                    var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                    return handler.HandleProductActivatedEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductActivatedEventAsync(message, cancellationToken);
             });
 
             // ProductDeactivatedEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductDeactivatedEvent>((message, cancellationToken) =>
             {
-                ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductDeactivatedEvent.
-                    var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                    return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+                return handler.HandleProductDeactivatedEventAsync(message, cancellationToken);
             });
 
             return eventHandlerRegistration;

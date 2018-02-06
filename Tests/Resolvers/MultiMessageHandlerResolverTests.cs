@@ -25,10 +25,10 @@ namespace Xer.Delegator.Tests.Resolvers
                 });
 
                 // When
-                MessageHandlerDelegate<TestMessage> handler = resolver.ResolveMessageHandler<TestMessage>();
+                MessageHandlerDelegate handler = resolver.ResolveMessageHandler(typeof(TestMessage));
                 
                 // Then
-                handler.Should().NotBe(NullMessageHandlerDelegate<TestMessage>.Value, "registered message handler delegate should be resolved.");
+                handler.Should().NotBe(NullMessageHandlerDelegate.Instance, "registered message handler delegate should be resolved.");
             }
 
             [Fact]
@@ -38,10 +38,10 @@ namespace Xer.Delegator.Tests.Resolvers
                 IMessageHandlerResolver resolver = CreateMultiMessageHandlerResolver();
 
                 // When
-                MessageHandlerDelegate<TestMessage> handler = resolver.ResolveMessageHandler<TestMessage>();
+                MessageHandlerDelegate handler = resolver.ResolveMessageHandler(typeof(TestMessage));
                 
                 // Then
-                handler.ShouldBeEquivalentTo(NullMessageHandlerDelegate<TestMessage>.Value);
+                handler.ShouldBeEquivalentTo(NullMessageHandlerDelegate.Instance);
             }
         }
 

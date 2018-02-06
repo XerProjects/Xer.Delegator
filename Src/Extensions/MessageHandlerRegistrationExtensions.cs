@@ -9,7 +9,8 @@ namespace Xer.Delegator
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="syncMessageHandler">Synchronous message handler delegate.</param>
-        public static void Register<TMessage>(this IMessageHandlerRegistration registration, Action<TMessage> syncMessageHandler) where TMessage : class
+        public static void Register<TMessage>(this IMessageHandlerRegistration registration, Action<TMessage> syncMessageHandler) 
+            where TMessage : class
         {
             if (registration == null)
             {
@@ -22,10 +23,17 @@ namespace Xer.Delegator
             }
             
             // Convert to async delegate.
-            registration.Register<TMessage>((message, ct) =>
+            registration.Register<TMessage>((message, cancellationToken) =>
             {
-                syncMessageHandler.Invoke(message);
-                return TaskUtility.CompletedTask;
+                try
+                {
+                    syncMessageHandler.Invoke(message);
+                    return TaskUtility.CompletedTask;
+                }
+                catch(Exception ex)
+                {
+                    return TaskUtility.FromException(ex);
+                }
             });
         }
     }

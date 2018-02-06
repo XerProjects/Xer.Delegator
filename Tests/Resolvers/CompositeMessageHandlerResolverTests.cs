@@ -42,7 +42,7 @@ namespace Xer.Delegator.Tests.Resolvers
                 CompositeMessageHandlerResolver compositeResolver = CreateCompositeMessageHandlerResolver(multiResolver, singleResolver);
 
                 // When
-                MessageHandlerDelegate<TestMessage> handler = compositeResolver.ResolveMessageHandler<TestMessage>();
+                MessageHandlerDelegate handler = compositeResolver.ResolveMessageHandler(typeof(TestMessage));
                 handler.Invoke(new TestMessage()); // Should invode the handlers registered in multi registration
                 
                 // Then
@@ -58,10 +58,10 @@ namespace Xer.Delegator.Tests.Resolvers
                 CompositeMessageHandlerResolver compositeResolver = CreateCompositeMessageHandlerResolver(multiRegistration, singleRegistration);
 
                 // When
-                MessageHandlerDelegate<TestMessage> handler = compositeResolver.ResolveMessageHandler<TestMessage>();
+                MessageHandlerDelegate handler = compositeResolver.ResolveMessageHandler(typeof(TestMessage));
                 
                 // Then
-                handler.ShouldBeEquivalentTo(NullMessageHandlerDelegate<TestMessage>.Value);
+                handler.ShouldBeEquivalentTo(NullMessageHandlerDelegate.Instance);
             }
         }
 

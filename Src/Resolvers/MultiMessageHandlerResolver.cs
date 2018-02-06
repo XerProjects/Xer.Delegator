@@ -4,7 +4,7 @@ namespace Xer.Delegator.Resolvers
 {
     /// <summary>
     /// Represents an object that resolves multiple instances of message handler delegates 
-    /// which are wrapped in a single <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/> instance.
+    /// which are merged in a single <see cref="Xer.Delegator.MessageHandlerDelegate"/> instance.
     /// </summary>
     public class MultiMessageHandlerResolver : IMessageHandlerResolver
     {
@@ -31,19 +31,19 @@ namespace Xer.Delegator.Resolvers
 
         /// <summary>
         /// Resolve a message handler delegate for the message type.
-        /// If no handler is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate{TMessage}.Value" /> is returned.
+        /// If no handler is found, an instance of <see cref="Xer.Delegator.NullMessageHandlerDelegate.Instance" /> is returned.
         /// </summary>
-        /// <typeparam name="TMessage">Type of message.</typeparam>
+        /// <param name="messageType">Type of message.</param>
         /// <returns>Message handler delegate which invokes all registered delegates.</returns>
-        public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
+        public MessageHandlerDelegate ResolveMessageHandler(Type messageType)
         {
-            if (_multiMessageHandlerDelegateStore.TryGetValue<TMessage>(out MessageHandlerDelegate<TMessage> messageHandlerDelegate))
+            if (_multiMessageHandlerDelegateStore.TryGetMessageHandlerDelegate(messageType, out MessageHandlerDelegate messageHandlerDelegate))
             {
                 return messageHandlerDelegate;
             }
 
             // Null message handler.
-            return NullMessageHandlerDelegate<TMessage>.Value;
+            return NullMessageHandlerDelegate.Instance;
         }
 
         #endregion IMessageHandlerResolver Implementation

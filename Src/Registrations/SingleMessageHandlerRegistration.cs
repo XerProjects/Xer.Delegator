@@ -1,5 +1,7 @@
 using System;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Xer.Delegator.Resolvers;
 
 namespace Xer.Delegator.Registrations
@@ -22,8 +24,8 @@ namespace Xer.Delegator.Registrations
         /// Duplicate message handlers for a single message type is not allowed.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
-        /// <param name="messageHandlerDelegate">Asynchronous message handler delegate.</param>
-        public void Register<TMessage>(MessageHandlerDelegate<TMessage> messageHandler) where TMessage : class
+        /// <param name="messageHandler">Asynchronous message handler delegate.</param>
+        public void Register<TMessage>(Func<TMessage, CancellationToken, Task> messageHandler) where TMessage : class
         {
             if (messageHandler == null)
             {

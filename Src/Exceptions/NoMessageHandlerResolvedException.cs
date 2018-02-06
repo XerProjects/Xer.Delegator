@@ -3,7 +3,7 @@ using System;
 namespace Xer.Delegator.Exceptions
 {
     /// <summary>
-    /// Exception that can be thrown when no instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/> can be resolved.
+    /// Exception that can be thrown when no instance of <see cref="Xer.Delegator.MessageHandlerDelegate"/> can be resolved.
     /// </summary>
     public class NoMessageHandlerResolvedException : Exception
     {

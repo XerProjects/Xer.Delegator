@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Xer.Delegator
 {
@@ -12,6 +14,6 @@ namespace Xer.Delegator
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="messageHandler">Asynchronous message handler delegate.</param>
-        void Register<TMessage>(MessageHandlerDelegate<TMessage> messageHandler) where TMessage : class;
+        void Register<TMessage>(Func<TMessage, CancellationToken, Task> messageHandler) where TMessage : class;
     }
 }

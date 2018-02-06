@@ -26,6 +26,11 @@ namespace ReadSide.Products.Repositories
             return Task.CompletedTask;
         }
 
+        public Task<List<ProductReadModel>> GetAllProductsAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return Task.FromResult(_products.ToList());
+        }
+
         public Task<ProductReadModel> GetProductByIdAsync(int productId, CancellationToken cancellationToken = default(CancellationToken))
         {
             var product = _products.FirstOrDefault(p => p.ProductId == productId);

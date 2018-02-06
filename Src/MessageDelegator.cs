@@ -44,12 +44,14 @@ namespace Xer.Delegator
             {
                 throw new ArgumentNullException(nameof(message));
             }
+            
+            Type messageType = message.GetType();
 
-            MessageHandlerDelegate<TMessage> messageHandler = _messageHandlerResolver.ResolveMessageHandler<TMessage>();
+            MessageHandlerDelegate messageHandler = _messageHandlerResolver.ResolveMessageHandler(messageType);
 
             if(messageHandler == null)
             {
-                throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage));
+                throw NoMessageHandlerResolvedException.WithMessageType(messageType);
             }
 
             return messageHandler.Invoke(message, cancellationToken);

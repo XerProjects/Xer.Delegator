@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xer.Delegator.Tests.Entities;
@@ -42,13 +44,13 @@ namespace Xer.Delegator.Tests
             {
                 // Given
                 int expectedNumberOfHandlers = 10;
-                int actualNumberOfHandlers = 0;
+                int actualMessageHandlerInvocationCount = 0;
 
                 IMessageHandlerResolver resolver = CreateMultiMessageHandlerResolver(registration =>
                 {
                     // Register 10 handlers.
                     for(int i = 0; i < expectedNumberOfHandlers; i++)
-                        registration.Register<TestMessage>((message, ct) => { actualNumberOfHandlers++; return Task.CompletedTask; });
+                        registration.Register<TestMessage>((message, ct) => { actualMessageHandlerInvocationCount++; return Task.CompletedTask; });
                 });
 
                 MessageDelegator messageDelegator = CreateMessageDelegator(resolver);
@@ -57,7 +59,41 @@ namespace Xer.Delegator.Tests
                 await messageDelegator.SendAsync(new TestMessage());
 
                 // Then
-                actualNumberOfHandlers.Should().Be(expectedNumberOfHandlers);
+                actualMessageHandlerInvocationCount.Should().Be(expectedNumberOfHandlers);
+            }
+
+            [Fact]
+            public async Task ShouldSendAllMessagesToMultipleMessageHandlers()
+            {
+                // Given
+                int numberOfHandlers = 10;
+                int expectedMessageHandlerInvocationCount = 5;
+                int actualMessageHandlerInvocationCount = 0;
+
+                IMessageHandlerResolver resolver = CreateMultiMessageHandlerResolver(registration =>
+                {
+                    // Register 10 handlers.
+                    for(int i = 0; i < numberOfHandlers; i++)
+                    {
+                        registration.Register<TestMessage>((message, ct) => 
+                        { 
+                            actualMessageHandlerInvocationCount++; 
+                            return Task.CompletedTask; 
+                        });
+                    }
+                });               
+
+                MessageDelegator messageDelegator = CreateMessageDelegator(resolver);
+
+                // Instance messages.
+                IEnumerable<TestMessage> messages = Enumerable.Range(0, expectedMessageHandlerInvocationCount).Select(i => new TestMessage());
+
+                // When
+                await messageDelegator.SendAllAsync(messages);
+
+                // Then
+                int totalInvocationCount = numberOfHandlers * expectedMessageHandlerInvocationCount;
+                actualMessageHandlerInvocationCount.Should().Be(totalInvocationCount);
             }
 
             [Fact]
@@ -82,6 +118,34 @@ namespace Xer.Delegator.Tests
 
                 // Then
                 messageHandlerWasInvoked.Should().BeTrue();
+            }
+
+            [Fact]
+            public async Task ShouldSendAllMessagesToASingleMessageHandler()
+            {
+                // Given
+                int expectedMessageHandlerInvocationCount = 5;
+                int actualMessageHandlerInvocationCount = 0;
+
+                IMessageHandlerResolver resolver = CreateSingleMessageHandlerResolver(registration =>
+                {
+                    registration.Register<TestMessage>((message, ct) => 
+                    { 
+                        actualMessageHandlerInvocationCount++; 
+                        return Task.CompletedTask; 
+                    });
+                });               
+
+                MessageDelegator messageDelegator = CreateMessageDelegator(resolver);
+
+                // Instance messages.
+                IEnumerable<TestMessage> messages = Enumerable.Range(0, expectedMessageHandlerInvocationCount).Select(i => new TestMessage());
+
+                // When
+                await messageDelegator.SendAllAsync(messages);
+
+                // Then
+                actualMessageHandlerInvocationCount.Should().Be(expectedMessageHandlerInvocationCount);
             }
 
              [Fact]

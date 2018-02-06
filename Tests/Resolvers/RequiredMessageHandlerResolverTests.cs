@@ -31,7 +31,7 @@ namespace Xer.Delegator.Tests.Resolvers
                 Action action = () =>
                 {
                     // When
-                    MessageHandlerDelegate<TestMessage> handler = requiredResolver.ResolveMessageHandler<TestMessage>();
+                    MessageHandlerDelegate handler = requiredResolver.ResolveMessageHandler(typeof(TestMessage));
                 };
                 
                 // Then
@@ -48,7 +48,7 @@ namespace Xer.Delegator.Tests.Resolvers
                 Action action = () =>
                 {
                     // When
-                    MessageHandlerDelegate<TestMessage> handler = requiredResolver.ResolveMessageHandler<TestMessage>();
+                    MessageHandlerDelegate handler = requiredResolver.ResolveMessageHandler(typeof(TestMessage));
                 };
                 
                 // Then
@@ -67,7 +67,7 @@ namespace Xer.Delegator.Tests.Resolvers
                 Action action = () =>
                 {
                     // When
-                    MessageHandlerDelegate<TestMessage> handler = requiredResolver.ResolveMessageHandler<TestMessage>();
+                    MessageHandlerDelegate handler = requiredResolver.ResolveMessageHandler(typeof(TestMessage));
                 };
                 
                 // Then

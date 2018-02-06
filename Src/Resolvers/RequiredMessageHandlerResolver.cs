@@ -4,7 +4,7 @@ using Xer.Delegator.Exceptions;
 namespace Xer.Delegator.Resolvers
 {
     /// <summary>
-    /// Represents a decorator object that requires an instance of <see cref="Xer.Delegator.MessageHandlerDelegate{TMessage}"/>
+    /// Represents a decorator object that requires an instance of <see cref="Xer.Delegator.MessageHandlerDelegate"/>
     /// from an internal <see cref="Xer.Delegator.IMessageHandlerResolver"/> instance.
     /// </summary>
     public class RequiredMessageHandlerResolver : IMessageHandlerResolver
@@ -29,30 +29,30 @@ namespace Xer.Delegator.Resolvers
         #endregion Constructors
 
         #region IMessageHandlerResolver Implementation
-        
+
         /// <summary>
         /// Resolve a message handler delegate for the message type and throws an exception if no handler is found.
         /// </summary>
-        /// <typeparam name="TMessage">Type of message.</typeparam>
+        /// <param name="messageType">Type of message.</param>
         /// <returns>Message handler delegate which invokes all registered handlers.</returns>
-        /// <exception cref="Xer.Delegator.Exceptions.NoMessageHandlerResolvedException">Throws when no message handler delegate is found.</exception>  
-        public MessageHandlerDelegate<TMessage> ResolveMessageHandler<TMessage>() where TMessage : class
+        /// <exception cref="Xer.Delegator.Exceptions.NoMessageHandlerResolvedException">Throws when no message handler delegate is found.</exception>
+        public MessageHandlerDelegate ResolveMessageHandler(Type messageType)
         {
             try
             {
-                MessageHandlerDelegate<TMessage> messageHandler = _messageHandlerResolver.ResolveMessageHandler<TMessage>();
+                MessageHandlerDelegate messageHandler = _messageHandlerResolver.ResolveMessageHandler(messageType);
                 
                 // Throw if resolved handler is a null message handler.
-                if(messageHandler == null || messageHandler == NullMessageHandlerDelegate<TMessage>.Value)
+                if(messageHandler == null || messageHandler == NullMessageHandlerDelegate.Instance)
                 {
-                    throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage));
+                    throw NoMessageHandlerResolvedException.WithMessageType(messageType);
                 }
 
                 return messageHandler;
             }
             catch(Exception ex)
             {
-                throw NoMessageHandlerResolvedException.WithMessageType(typeof(TMessage), ex);
+                throw NoMessageHandlerResolvedException.WithMessageType(messageType, ex);
             }
         }
 

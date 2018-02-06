@@ -85,24 +85,27 @@ namespace ConsoleApp
             var commandHandlerRegistration = new SingleMessageHandlerRegistration();
 
             // ActivateProductCommand
-            commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<RegisterProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = container.GetInstance<RegisterProductCommandHandler>();
-                return handler.HandleRegisterProductCommandAsync(message, ct);
+                return handler.HandleRegisterProductCommandAsync(message, cancellationToken);
             });
 
             // ActivateProductCommand
-            commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<ActivateProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = container.GetInstance<ActivateProductCommandHandler>();
-                return handler.HandleActivateProductCommandAsync(message, ct);
+                return handler.HandleActivateProductCommandAsync(message, cancellationToken);
             });
 
             // DeactivateProductCommand
-            commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+            commandHandlerRegistration.Register<DeactivateProductCommand>((message, cancellationToken) =>
             {
+                // You can also manually instantiate if that's how you roll.
                 var handler = container.GetInstance<DeactivateProductCommandHandler>();
-                return handler.HandleDeactivateProductCommandAsync(message, ct);
+                return handler.HandleDeactivateProductCommandAsync(message, cancellationToken);
             });
 
             return commandHandlerRegistration;
@@ -115,48 +118,27 @@ namespace ConsoleApp
             var eventHandlerRegistration = new MultiMessageHandlerRegistration();
 
             // ProductRegisteredEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductRegisteredEvent>((message, cancellationToken) =>
             {
-                ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductRegisteredEvent.
-                    var handler = container.GetInstance<ProductDomainEventsHandler>();
-                    return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = container.GetInstance<ProductDomainEventsHandler>();
+                return handler.HandleProductRegisteredEventAsync(message, cancellationToken);
             });
 
             // ProductActivatedEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductActivatedEvent>((message, cancellationToken) =>
             {
-                ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductActivatedEvent.
-                    var handler = container.GetInstance<ProductDomainEventsHandler>();
-                    return handler.HandleProductActivatedEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = container.GetInstance<ProductDomainEventsHandler>();
+                return handler.HandleProductActivatedEventAsync(message, cancellationToken);
             });
 
             // ProductDeactivatedEvent
-            eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+            eventHandlerRegistration.Register<ProductDeactivatedEvent>((message, cancellationToken) =>
             {
-                ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
-                if (domainEvent != null)
-                {
-                    // Handle only if domain event is a ProductDeactivatedEvent.
-                    var handler = container.GetInstance<ProductDomainEventsHandler>();
-                    return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
-                }
-
-                // Do nothing.
-                return Task.CompletedTask;
+                // You can also manually instantiate if that's how you roll.
+                var handler = container.GetInstance<ProductDomainEventsHandler>();
+                return handler.HandleProductDeactivatedEventAsync(message, cancellationToken);
             });
 
             return eventHandlerRegistration;
