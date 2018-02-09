@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator", "Src\Xer.Delegator.csproj", "{5599DCB2-D032-4B05-86F4-61CB3665761B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator", "Src\Core\Xer.Delegator.csproj", "{5599DCB2-D032-4B05-86F4-61CB3665761B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator.Tests", "Tests\Xer.Delegator.Tests.csproj", "{5460886A-57EE-489F-B657-8D617C162F2A}"
 EndProject

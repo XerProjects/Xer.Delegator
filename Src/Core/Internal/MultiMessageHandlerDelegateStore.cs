@@ -121,12 +121,12 @@ namespace Xer.Delegator
             public Type MessageType { get; }
 
             /// <summary>
-            /// List of message handlers for the specified message.
+            /// List of message handlers for the message type defined in the message type property.
             /// </summary>
             public IReadOnlyList<MessageHandlerDelegate> MessageHandlers => _messageHandlerDelegates;
 
             /// <summary>
-            /// Provides a merged message handler delegate that invokes all the listed message handler delegates in a single invocation.
+            /// Provides a merged message handler delegate that invokes all the delegates in the message handler list.
             /// </summary>
             public MessageHandlerDelegate MergedMessageHandler => _mergedMessageHandler;
 
@@ -148,7 +148,8 @@ namespace Xer.Delegator
             #region Methods
 
             /// <summary>
-            /// Add a message handler to the list and to the MergedMessageHandler property. 
+            /// Add a message handler to the list and rebuilds the MessageHandlerDelegate property 
+            /// to contain the newly added message handler delegate.
             /// </summary>
             /// <param name="messageHandlerDelegate">Message handler delegate.</param>
             public MessageHandlerContainer AddMessageHandler(MessageHandlerDelegate messageHandlerDelegate)
@@ -156,7 +157,7 @@ namespace Xer.Delegator
                 _messageHandlerDelegates.Add(messageHandlerDelegate);
 
                 // Re-merge to include newly added message handler.
-                MergeMessageHandlers();
+                BuildMergedMessageHandler();
 
                 return this;
             }
@@ -164,7 +165,7 @@ namespace Xer.Delegator
             /// <summary>
             /// Merge all message handler delegates into a single delegate and assign to MergedMessageHandler property.
             /// </summary>
-            private void MergeMessageHandlers()
+            private void BuildMergedMessageHandler()
             {
                 if(_messageHandlerDelegates.Count > 0)
                 {
