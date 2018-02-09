@@ -53,29 +53,33 @@ public void ConfigureServices(IServiceCollection services)
     // This is resolved by the MessageDelegator.
     services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
     {
-        // Register command handlers to the message handler registration. 
         // Commands can only have one handler so use SingleMessageHandlerRegistration.
         var commandHandlerRegistration = new SingleMessageHandlerRegistration();
+        
+        // Register command handlers to the single message handler registration. 
 
-        // RegisterProductCommand
-        commandHandlerRegistration.Register<RegisterProductCommand>((message, ct) =>
+        // ActivateProductCommand
+        commandHandlerRegistration.Register<RegisterProductCommand>((message, cancellationToken) =>
         {
+            // You can also manually instantiate if that's how you roll.
             var handler = serviceProvider.GetRequiredService<RegisterProductCommandHandler>();
-            return handler.HandleRegisterProductCommandAsync(message, ct);
+            return handler.HandleRegisterProductCommandAsync(message, cancellationToken);
         });
 
         // ActivateProductCommand
-        commandHandlerRegistration.Register<ActivateProductCommand>((message, ct) =>
+        commandHandlerRegistration.Register<ActivateProductCommand>((message, cancellationToken) =>
         {
+            // You can also manually instantiate if that's how you roll.
             var handler = serviceProvider.GetRequiredService<ActivateProductCommandHandler>();
-            return handler.HandleActivateProductCommandAsync(message, ct);
+            return handler.HandleActivateProductCommandAsync(message, cancellationToken);
         });
 
         // DeactivateProductCommand
-        commandHandlerRegistration.Register<DeactivateProductCommand>((message, ct) =>
+        commandHandlerRegistration.Register<DeactivateProductCommand>((message, cancellationToken) =>
         {
+            // You can also manually instantiate if that's how you roll.
             var handler = serviceProvider.GetRequiredService<DeactivateProductCommandHandler>();
-            return handler.HandleDeactivateProductCommandAsync(message, ct);
+            return handler.HandleDeactivateProductCommandAsync(message, cancellationToken);
         });
 
         return commandHandlerRegistration.BuildMessageHandlerResolver();
@@ -105,56 +109,33 @@ public void ConfigureServices(IServiceCollection services)
     // This is resolved by the MessageDelegator.
     services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
     {
-        // Register event handlers to the message handler registration. 
         // Events can have multiple handlers so use MultiMessageHandlerRegistration.
         var eventHandlerRegistration = new MultiMessageHandlerRegistration();
-
-        // In the sample, all events are published as IDomainEvent by the PublishingRepository,
-        // so register event handlers for IDomainEvent and check if domain event can be handled.
-
+        
+        // Register event handlers to the message handler registration. 
+        
         // ProductRegisteredEvent
-        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        eventHandlerRegistration.Register<ProductRegisteredEvent>((message, cancellationToken) =>
         {
-            ProductRegisteredEvent domainEvent = message as ProductRegisteredEvent;
-            if (domainEvent != null)
-            {
-                // Handle only if domain event is a ProductRegisteredEvent.
-                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                return handler.HandleProductRegisteredEventAsync(domainEvent, ct);
-            }
-
-            // Do nothing.
-            return Task.CompletedTask;
+            // You can also manually instantiate if that's how you roll.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductRegisteredEventAsync(message, cancellationToken);
         });
 
         // ProductActivatedEvent
-        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        eventHandlerRegistration.Register<ProductActivatedEvent>((message, cancellationToken) =>
         {
-            ProductActivatedEvent domainEvent = message as ProductActivatedEvent;
-            if (domainEvent != null)
-            {
-                // Handle only if domain event is a ProductActivatedEvent.
-                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                return handler.HandleProductActivatedEventAsync(domainEvent, ct);
-            }
-
-            // Do nothing.
-            return Task.CompletedTask;
+            // You can also manually instantiate if that's how you roll.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductActivatedEventAsync(message, cancellationToken);
         });
 
         // ProductDeactivatedEvent
-        eventHandlerRegistration.Register<IDomainEvent>((message, ct) =>
+        eventHandlerRegistration.Register<ProductDeactivatedEvent>((message, cancellationToken) =>
         {
-            ProductDeactivatedEvent domainEvent = message as ProductDeactivatedEvent;
-            if (domainEvent != null)
-            {
-                // Handle only if domain event is a ProductDeactivatedEvent.
-                var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
-                return handler.HandleProductDeactivatedEventAsync(domainEvent, ct);
-            }
-
-            // Do nothing.
-            return Task.CompletedTask;
+            // You can also manually instantiate if that's how you roll.
+            var handler = serviceProvider.GetRequiredService<ProductDomainEventsHandler>();
+            return handler.HandleProductDeactivatedEventAsync(message, cancellationToken);
         });
 
         return eventHandlerRegistration.BuildMessageHandlerResolver();
