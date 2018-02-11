@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xer.Delegator.Tests.Entities;
@@ -19,7 +20,7 @@ namespace Xer.Delegator.Tests
         public class MessageDelegatorConstruction
         {
             [Fact]
-            public void ShouldThrowWhenNullProvidedAsConstructorParameter()
+            public void ShouldThrowWhenNullIsProvidedAsConstructorParameter()
             {
                 // Given
                 Action action = () =>
@@ -148,7 +149,7 @@ namespace Xer.Delegator.Tests
                 actualMessageHandlerInvocationCount.Should().Be(expectedMessageHandlerInvocationCount);
             }
 
-             [Fact]
+            [Fact]
             public void ShouldThrowWhenNullIsProvided()
             {
                 // Given
@@ -164,9 +165,61 @@ namespace Xer.Delegator.Tests
                 // Then
                 action.ShouldThrow<ArgumentNullException>();
             }
+
+            [Fact]
+            public void ShouldThrowWhenCancelled()
+            {
+                // Given
+                IMessageHandlerResolver resolver = CreateSingleMessageHandlerResolver(registration =>
+                {
+                    registration.Register<TestMessage>((message, cancellationToken) =>
+                    {
+                        return Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    });
+                });
+
+                MessageDelegator messageDelegator = CreateMessageDelegator(resolver);
+
+                Func<Task> action = async () =>
+                {
+                    // Cancels after 1 second.
+                    using(var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1)))
+                    {
+                        // When
+                        await messageDelegator.SendAsync<TestMessage>(new TestMessage(), cts.Token);
+                    }
+                };
+
+                // Then
+                action.ShouldThrow<OperationCanceledException>();
+            }
+
+            [Fact]
+            public void ShouldPropagateExceptionFromHandler()
+            {
+                // Given
+                IMessageHandlerResolver resolver = CreateSingleMessageHandlerResolver(registration =>
+                {
+                    registration.Register<TestMessage>((message, cancellationToken) =>
+                    {
+                        return Task.FromException(new Exception("This exception is expected."));
+                    });
+                });
+
+                MessageDelegator messageDelegator = CreateMessageDelegator(resolver);
+
+                Func<Task> action = () =>
+                {
+                    // When
+                    return messageDelegator.SendAsync<TestMessage>(new TestMessage());
+                };
+
+                // Then
+                action.ShouldThrow<Exception>();
+            }
         }
 
-        #endregion SyncAsync Method
+        #endregion SendAsync Method
 
         #region Common Methods
         

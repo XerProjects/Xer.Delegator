@@ -53,8 +53,8 @@ namespace ConsoleApp
             // Register console app use cases.
             container.RegisterCollection(typeof(IUseCase), typeof(IUseCase).Assembly);
 
-            // Message handler resolver.
-            container.RegisterSingleton<IMessageHandlerResolver>(() => 
+            // Message delegator.
+            container.RegisterSingleton<IMessageDelegator>(() => 
             {
                 // Register command handlers to the message handler registration. 
                 // Commands can only have one handler so use SingleMessageHandlerRegistration.
@@ -65,15 +65,13 @@ namespace ConsoleApp
                 MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(container);
 
                 // Combine command handlers and event handlers.
-                return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
-                {
+                var resolver = CompositeMessageHandlerResolver.Compose(
                     commandHandlerRegistration.BuildMessageHandlerResolver(),
                     eventHandlerRegistration.BuildMessageHandlerResolver()
-                });
-            });
+                );
 
-            // Message delegator.
-            container.RegisterSingleton<IMessageDelegator, MessageDelegator>();
+                return new MessageDelegator(resolver);
+            });
 
             return new App(container);
         }

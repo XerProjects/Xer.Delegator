@@ -29,12 +29,8 @@ namespace Domain.Repositories
 
             // Do actual save.
             await _inner.SaveAsync(product, cancellationToken);
-
             // Send each domain events to handlers.
-            List<Task> publishDomainEventTasks = uncommittedDomainEvents.Select(e => _messageDelegator.SendAsync(e, cancellationToken)).ToList();
-
-            // Complete when all events have completed.
-            await Task.WhenAll(publishDomainEventTasks);
+            await _messageDelegator.SendAllAsync(uncommittedDomainEvents);
         }
     }
 }

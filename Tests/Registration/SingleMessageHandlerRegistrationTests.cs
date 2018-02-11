@@ -30,21 +30,6 @@ namespace Xer.Delegator.Tests.Registration
             }
 
             [Fact]
-            public void ShouldNotAllowNullInRegisterAsyncDelegate()
-            {
-                // Given
-                Action action = () =>
-                {
-                    SingleMessageHandlerRegistration registration = CreateSingleHandlerRegistration();
-                    // When
-                    registration.Register<TestMessage>(null);
-                };
-
-                // Then
-                action.ShouldThrow<ArgumentNullException>("null is not allowed.");
-            }
-
-            [Fact]
             public void ShouldOnlyAllowOneSyncDelegatePerMessageType()
             {
                 // Given
@@ -65,7 +50,22 @@ namespace Xer.Delegator.Tests.Registration
             }
 
             [Fact]
-            public void ShouldNotAllowNullInRegisterSyncDelegate()
+            public void ShouldNotAllowNullWhenRegisteringAsyncHandler()
+            {
+                // Given
+                Action action = () =>
+                {
+                    SingleMessageHandlerRegistration registration = CreateSingleHandlerRegistration();
+                    // When
+                    registration.Register<TestMessage>(null);
+                };
+
+                // Then
+                action.ShouldThrow<ArgumentNullException>("null is not allowed.");
+            }
+
+            [Fact]
+            public void ShouldNotAllowNullWhenRegisteringSyncHandler()
             {
                 // Given
                 Action action = () =>

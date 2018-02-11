@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ReadSide.Products;
@@ -19,11 +20,10 @@ namespace ConsoleApp.UseCases
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            List<ProductReadModel> products = await _productReadSideRepository.GetAllProductsAsync(cancellationToken);
-            products.ForEach(product =>
-            {
+            IReadOnlyCollection<ProductReadModel> products = await _productReadSideRepository.GetAllProductsAsync(cancellationToken);
+            
+            foreach(ProductReadModel product in products)
                 Console.WriteLine($"Product ID: {product.ProductId}, Product Name: {product.ProductName}, IsActive: {product.IsActive}");
-            });
         }
     }
 }

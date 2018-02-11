@@ -49,7 +49,7 @@ namespace AspNetCoreApp
             // Swagger.
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "AspNetCore Basic Registration Sample", Version = "v1" });
+                c.SwaggerDoc("v1", new Info { Title = "AspNetCore Sample", Version = "v1" });
                 c.IncludeXmlComments(AspNetCoreAppXmlDocPath);
             });
 
@@ -70,9 +70,8 @@ namespace AspNetCoreApp
             services.AddTransient<DeactivateProductCommandHandler>();
             services.AddTransient<ProductDomainEventsHandler>();
 
-            // Register message handler resolver to the container. 
-            // This is resolved by the MessageDelegator.
-            services.AddSingleton<IMessageHandlerResolver>((serviceProvider) =>
+            // Register message delegator to the container.
+            services.AddSingleton<IMessageDelegator>((serviceProvider) =>
             {
                 // Register command handlers to the message handler registration. 
                 // Commands can only have one handler so use SingleMessageHandlerRegistration.
@@ -83,15 +82,13 @@ namespace AspNetCoreApp
                 MultiMessageHandlerRegistration eventHandlerRegistration = RegisterEventHandlers(serviceProvider);
 
                 // Combine command handlers and event handlers.
-                return new CompositeMessageHandlerResolver(new IMessageHandlerResolver[]
-                {
+                var resolver = CompositeMessageHandlerResolver.Compose(
                     commandHandlerRegistration.BuildMessageHandlerResolver(),
                     eventHandlerRegistration.BuildMessageHandlerResolver()
-                });
-            });
+                );
 
-            // Message delegator.
-            services.AddSingleton<IMessageDelegator, MessageDelegator>();
+                return new MessageDelegator(resolver);
+            });
         }
 
         private static SingleMessageHandlerRegistration RegisterCommandHandlers(IServiceProvider serviceProvider)
