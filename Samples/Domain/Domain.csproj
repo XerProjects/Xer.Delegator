@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Src\Xer.Delegator.csproj" />
+    <ProjectReference Include="..\..\Src\Xer.Delegator\Xer.Delegator.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
