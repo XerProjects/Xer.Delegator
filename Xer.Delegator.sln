@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator", "Src\Xer.Delegator.csproj", "{5599DCB2-D032-4B05-86F4-61CB3665761B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator", "Src\Xer.Delegator\Xer.Delegator.csproj", "{5599DCB2-D032-4B05-86F4-61CB3665761B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator.Tests", "Tests\Xer.Delegator.Tests.csproj", "{5460886A-57EE-489F-B657-8D617C162F2A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xer.Delegator.Tests", "Tests\Xer.Delegator.Tests\Xer.Delegator.Tests.csproj", "{5460886A-57EE-489F-B657-8D617C162F2A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D56DF064-CA65-433E-89AD-F585765C65F9}"
 EndProject
