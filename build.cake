@@ -2,6 +2,7 @@
 // ADDINS/TOOLS
 ///////////////////////////////////////////////////////////////////////////////
 #tool "nuget:?package=GitVersion.CommandLine"
+#addin nuget:?package=Cake.Git
 
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -16,10 +17,6 @@ var configuration = Argument<string>("configuration", "Release");
 
 var solutions = GetFiles("./**/*.sln");
 var projects = GetFiles("./**/*.csproj").Select(x => x.GetDirectory());
-var myGetFeed = EnvironmentVariable("MYGET_SOURCE");
-var myGetApiKey = EnvironmentVariable("MYGET_API_KEY");
-var nuGetFeed = EnvironmentVariable("NUGET_SOURCE");
-var nuGetApiKey = EnvironmentVariable("NUGET_API_KEY");
 
 GitVersion gitVersion;
 
@@ -32,15 +29,22 @@ Setup(context =>
     gitVersion = GitVersion(new GitVersionSettings {
         UpdateAssemblyInfo = true
     });
+
+    BuildParameters.Initialize(Context);
     
     // Executed BEFORE the first task.
     Information("Xer.Delegator");
     Information("Parameters");
     Information("///////////////////////////////////////////////////////////////////////////////");
-    Information("Branch: {0}", gitVersion.BranchName);
+    Information("Branch: {0}", BuildParameters.Instance.BranchName);
     Information("Version semver: {0}", gitVersion.LegacySemVerPadded);
     Information("Version assembly: {0}", gitVersion.MajorMinorPatch);
     Information("Version informational: {0}", gitVersion.InformationalVersion);
+    Information("Master branch: {0}", BuildParameters.Instance.IsMasterBranch);
+    Information("Dev branch: {0}", BuildParameters.Instance.IsDevBranch);
+    Information("Hotfix branch: {0}", BuildParameters.Instance.IsHotFixBranch);
+    Information("Publish to myget: {0}", BuildParameters.Instance.ShouldPublishMyGet);
+    Information("Publish to nuget: {0}", BuildParameters.Instance.ShouldPublishNuGet);
     Information("///////////////////////////////////////////////////////////////////////////////");
 });
 
@@ -131,16 +135,138 @@ Task("Test")
     }
 });
 
+Task("Pack")
+    .IsDependentOn("Test")
+    .Does(() =>
+{
+    var projects = GetFiles("./src/**/*.csproj");
+    var settings = new DotNetCorePackSettings 
+    {
+        NoBuild = true,
+        Configuration = configuration,
+        ArgumentCustomization = (args) => args
+            .Append("/p:Version={0}", gitVersion.LegacySemVerPadded)
+            .Append("/p:AssemblyVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:FileVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:AssemblyInformationalVersion={0}", gitVersion.InformationalVersion)
+    };
+
+    foreach (var project in projects)
+    {
+        DotNetCorePack(project.ToString(), settings);
+    }
+});
+
+Task("PublishMyGet")
+    .WithCriteria(() => BuildParameters.Instance.ShouldPublishMyGet)
+    .IsDependentOn("Pack")
+    .Does(() =>
+{
+    var nupkgs = GetFiles("./**/*.nupkg");
+
+    foreach(var nupkgFile in nupkgs)
+    {
+        Information("Pulishing to myget {0}", nupkgFile);
+
+        NuGetPush(nupkgFile, new NuGetPushSettings 
+        {
+            Source = BuildParameters.Instance.MyGetFeed,
+            ApiKey = BuildParameters.Instance.MyGetApiKey
+        });
+    }
+});
+
+Task("PublishNuGet")
+    .WithCriteria(() => BuildParameters.Instance.ShouldPublishNuGet)
+    .IsDependentOn("Pack")
+    .Does(() =>
+{
+    var nupkgs = GetFiles("./**/*.nupkg");
+
+    foreach(var nupkgFile in nupkgs)
+    {
+        Information("Pulishing to nuget {0}", nupkgFile);
+        NuGetPush(nupkgFile, new NuGetPushSettings 
+        {
+            Source = BuildParameters.Instance.NuGetFeed,
+            ApiKey = BuildParameters.Instance.NuGetApiKey
+        });
+    }
+});
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // TARGETS
 ///////////////////////////////////////////////////////////////////////////////
 
 Task("Default")
     .Description("This is the default task which will be ran if no specific target is passed in.")
-    .IsDependentOn("Test");
+    .IsDependentOn("PublishNuGet")
+    .IsDependentOn("PublishMyGet");
 
 ///////////////////////////////////////////////////////////////////////////////
 // EXECUTION
 ///////////////////////////////////////////////////////////////////////////////
 
 RunTarget(target);
+
+public class BuildParameters
+{
+    private static BuildParameters _buildParameters;
+
+    public static BuildParameters Instance => _buildParameters;
+    
+    private ICakeContext _context;
+
+    private BuildParameters(ICakeContext context)
+    {
+        _context = context;
+    }
+
+    public static void Initialize(ICakeContext context)
+    {
+        if(_buildParameters != null)
+        {
+            return;
+        }
+
+        _buildParameters = new BuildParameters(context);
+    }
+
+    public bool IsAppVeyorBuild => _context.BuildSystem().AppVeyor.IsRunningOnAppVeyor;
+
+    public bool IsLocalBuild => _context.BuildSystem().IsLocalBuild;
+
+    public string BranchName
+    {
+        get
+        {
+            return IsLocalBuild 
+                ? _context.GitBranchCurrent(".").FriendlyName
+                : _context.BuildSystem().AppVeyor.Environment.Repository.Branch;
+        }
+    }
+
+    public string MyGetFeed => _context.EnvironmentVariable("MYGET_SOURCE");
+
+    public string MyGetApiKey => _context.EnvironmentVariable("MYGET_API_KEY");
+
+    public string NuGetFeed => _context.EnvironmentVariable("NUGET_SOURCE");
+
+    public string NuGetApiKey => _context.EnvironmentVariable("NUGET_API_KEY");
+
+    public bool IsMasterBranch => StringComparer.OrdinalIgnoreCase.Equals("master", BranchName);
+
+    public bool IsDevBranch => StringComparer.OrdinalIgnoreCase.Equals("dev", BranchName);
+
+    public bool IsReleaseBranch => BranchName.StartsWith("release", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsHotFixBranch => BranchName.StartsWith("hotfix", StringComparison.OrdinalIgnoreCase);
+
+    public bool ShouldPublishMyGet => !string.IsNullOrWhiteSpace(MyGetApiKey) && !string.IsNullOrWhiteSpace(MyGetFeed);
+
+    public bool ShouldPublishNuGet => !string.IsNullOrWhiteSpace(NuGetApiKey) 
+        && !string.IsNullOrWhiteSpace(NuGetFeed)
+        && IsMasterBranch 
+        && IsHotFixBranch;
+}
