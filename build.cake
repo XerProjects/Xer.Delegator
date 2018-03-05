@@ -1,4 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
+// ADDINS/TOOLS
+///////////////////////////////////////////////////////////////////////////////
+#tool "nuget:?package=GitVersion.CommandLine"
+
+///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -10,7 +15,13 @@ var configuration = Argument<string>("configuration", "Release");
 ///////////////////////////////////////////////////////////////////////////////
 
 var solutions = GetFiles("./**/*.sln");
-var solutionPaths = solutions.Select(solution => solution.GetDirectory());
+var projects = GetFiles("./**/*.csproj").Select(x => x.GetDirectory());
+var myGetFeed = EnvironmentVariable("MYGET_SOURCE");
+var myGetApiKey = EnvironmentVariable("MYGET_API_KEY");
+var nuGetFeed = EnvironmentVariable("NUGET_SOURCE");
+var nuGetApiKey = EnvironmentVariable("NUGET_API_KEY");
+
+GitVersion gitVersion;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -18,8 +29,19 @@ var solutionPaths = solutions.Select(solution => solution.GetDirectory());
 
 Setup(context =>
 {
+    gitVersion = GitVersion(new GitVersionSettings {
+        UpdateAssemblyInfo = true
+    });
+    
     // Executed BEFORE the first task.
-    Information("Running tasks...");
+    Information("Xer.Delegator");
+    Information("Parameters");
+    Information("///////////////////////////////////////////////////////////////////////////////");
+    Information("Branch: {0}", gitVersion.BranchName);
+    Information("Version semver: {0}", gitVersion.LegacySemVerPadded);
+    Information("Version assembly: {0}", gitVersion.MajorMinorPatch);
+    Information("Version informational: {0}", gitVersion.InformationalVersion);
+    Information("///////////////////////////////////////////////////////////////////////////////");
 });
 
 Teardown(context =>
@@ -37,11 +59,10 @@ Task("Clean")
     .Does(() =>
 {
     // Clean solution directories.
-    foreach(var path in solutionPaths)
+    foreach(var project in projects)
     {
-        Information("Cleaning {0}", path);
-        CleanDirectories(path + "/**/bin/" + configuration);
-        CleanDirectories(path + "/**/obj/" + configuration);
+        Information("Cleaning {0}", project);
+        DotNetCoreClean(project.FullPath);
     }
 });
 
@@ -49,11 +70,21 @@ Task("Restore")
     .Description("Restores all the NuGet packages that are used by the specified solution.")
     .Does(() =>
 {
+    var settings = new DotNetCoreRestoreSettings
+    {
+        ArgumentCustomization = args => args
+            .Append("/p:Version={0}", gitVersion.LegacySemVerPadded)
+            .Append("/p:AssemblyVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:FileVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:AssemblyInformationalVersion={0}", gitVersion.InformationalVersion)
+    };
+
     // Restore all NuGet packages.
     foreach(var solution in solutions)
     {
         Information("Restoring {0}...", solution);
-        NuGetRestore(solution);
+      
+        DotNetCoreRestore(solution.FullPath, settings);
     }
 });
 
@@ -63,17 +94,22 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(() =>
 {
+    var settings = new DotNetCoreBuildSettings
+    {
+        Configuration = configuration,
+        ArgumentCustomization = args => args
+            .Append("/p:Version={0}", gitVersion.LegacySemVerPadded)
+            .Append("/p:AssemblyVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:FileVersion={0}", gitVersion.MajorMinorPatch)
+            .Append("/p:AssemblyInformationalVersion={0}", gitVersion.InformationalVersion)
+    };
+
     // Build all solutions.
     foreach(var solution in solutions)
     {
         Information("Building {0}", solution);
         
-        var settings = new DotNetCoreMSBuildSettings()
-            .SetConfiguration(configuration)
-            .SetMaxCpuCount(0) // Set this value to zero to use as many MSBuild processes as available CPUs.
-            .TreatAllWarningsAs(MSBuildTreatAllWarningsAs.Error);
-
-        DotNetCoreMSBuild(solution.FullPath, settings);
+        DotNetCoreBuild(solution.FullPath, settings);
     }
 });
 
@@ -83,9 +119,15 @@ Task("Test")
     .Does(() =>
 {
     var projects = GetFiles("./Tests/**/*.Tests.csproj");
+    var settings = new DotNetCoreTestSettings
+    {
+        Configuration = configuration,
+        NoBuild = true,
+    };
+
     foreach(var project in projects)
     {
-        DotNetCoreTest(project.FullPath);
+        DotNetCoreTest(project.FullPath, settings);
     }
 });
 
