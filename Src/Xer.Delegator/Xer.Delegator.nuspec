@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Xer.Delegator</id>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <title>Xer.Delegator</title>
     <authors>jeyjeyemem</authors>
     <owners>jeyjeyemem</owners>
@@ -12,11 +12,7 @@
     <description>A simple delegate-based message handling library.</description>
     <summary>A simple delegate-based message handling library.</summary>
     <releaseNotes>
-      - Update whole library to check for actual type of object when sending messages to handlers, not the type specified in the generic type parameter.
-      - Breaking API changes.
-      - Dropped generic MessageHandlerDelegate`TMessage in favor of the non-generic MessageHandlerDelegate.
-      - Dropped generic NullMessageHandlerDelegate`TMessage in favor of the non-generic NullMessageHandlerDelegate.
-      - New SendAllAsync extension method for MessageDelegator for sending multiple messages at once.
+      - Renamed namespace from Xer.Delegator.Registrations to Xer.Delegator.Registration
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Delegate Message Handling Library</tags>
