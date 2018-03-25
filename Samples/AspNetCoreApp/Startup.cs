@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ReadSide.Products.Repositories;
 using Swashbuckle.AspNetCore.Swagger;
 using Xer.Delegator;
-using Xer.Delegator.Registrations;
+using Xer.Delegator.Registration;
 using Xer.Delegator.Resolvers;
 
 namespace AspNetCoreApp

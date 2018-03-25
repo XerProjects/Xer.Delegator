@@ -1,27 +1,28 @@
 using System;
-using System.Reflection;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xer.Delegator.Resolvers;
 
-namespace Xer.Delegator.Registrations
+namespace Xer.Delegator.Registration
 {
     /// <summary>
-    /// Represents an object which only allows a single message handler delegate to be registered for a given message type.
+    /// Represents an object which allows multiple message handler delegates to be registered for a given message type.
     /// </summary>
-    public class SingleMessageHandlerRegistration : IMessageHandlerRegistration
+    public class MultiMessageHandlerRegistration : IMessageHandlerRegistration
     {
         #region Declarations
 
-        private readonly SingleMessageHandlerDelegateStore _messageHandlersByMessageType = new SingleMessageHandlerDelegateStore();
+        private readonly MultiMessageHandlerDelegateStore _messageHandlersByMessageType = new MultiMessageHandlerDelegateStore();
 
         #endregion Declarations
 
         #region IMessageHandlerRegistration Implementation
-        
+
         /// <summary>
-        /// Register an asynchronous message handler delegate for the specified message type.
-        /// Duplicate message handlers for a single message type is not allowed.
+        /// Register an asynchronous message handler delegate for the specified message type. 
+        /// This will add the message handler delegate to an internal collection of delegates.
         /// </summary>
         /// <typeparam name="TMessage">Type of message.</typeparam>
         /// <param name="messageHandler">Asynchronous message handler delegate.</param>
@@ -43,11 +44,12 @@ namespace Xer.Delegator.Registrations
         /// Build a message handler resolver containing all registered message handler delegates.
         /// </summary>
         /// <returns>
-        /// Message handler resolver that returns a message handler delegate registered for a message type.
+        /// Message handler resolver that returns a message handler delegate 
+        /// which invokes all stored delegates in the internal collection of delegates.
         /// </returns>
         public IMessageHandlerResolver BuildMessageHandlerResolver()
         {
-            return new SingleMessageHandlerResolver(_messageHandlersByMessageType);
+            return new MultiMessageHandlerResolver(_messageHandlersByMessageType);
         }
 
         #endregion Methods

@@ -10,7 +10,7 @@ using Infrastructure.DomainEventHandlers;
 using ReadSide.Products.Repositories;
 using SimpleInjector;
 using Xer.Delegator;
-using Xer.Delegator.Registrations;
+using Xer.Delegator.Registration;
 using Xer.Delegator.Resolvers;
 
 namespace ConsoleApp

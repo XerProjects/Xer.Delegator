@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Xer.Delegator.Registrations;
+using Xer.Delegator.Registration;
 using Xer.Delegator.Tests.Entities;
 using Xunit;
 
