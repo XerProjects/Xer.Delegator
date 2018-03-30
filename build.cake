@@ -33,7 +33,7 @@ Setup(context =>
     BuildParameters.Initialize(Context);
     
     // Executed BEFORE the first task.
-    Information("Xer.Messaginator.Extensions.MessageSources.Http");
+    Information("Xer.Delegator");
     Information("Parameters");
     Information("///////////////////////////////////////////////////////////////////////////////");
     Information("Branch: {0}", BuildParameters.Instance.BranchName);
