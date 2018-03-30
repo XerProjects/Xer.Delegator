@@ -1,7 +1,7 @@
 using System;
 using FluentAssertions;
 using Xer.Delegator.Exceptions;
-using Xer.Delegator.Registrations;
+using Xer.Delegator.Registration;
 using Xer.Delegator.Resolvers;
 using Xer.Delegator.Tests.Entities;
 using Xunit;

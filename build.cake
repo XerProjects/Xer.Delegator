@@ -33,7 +33,7 @@ Setup(context =>
     BuildParameters.Initialize(Context);
     
     // Executed BEFORE the first task.
-    Information("Xer.Delegator");
+    Information("Xer.Messaginator.Extensions.MessageSources.Http");
     Information("Parameters");
     Information("///////////////////////////////////////////////////////////////////////////////");
     Information("Branch: {0}", BuildParameters.Instance.BranchName);
@@ -62,8 +62,14 @@ Task("Clean")
     .Description("Cleans all directories that are used during the build process.")
     .Does(() =>
 {
+    if (projects.Count() == 0)
+    {
+        Information("No projects found.");
+        return;
+    }
+
     // Clean solution directories.
-    foreach(var project in projects)
+    foreach (var project in projects)
     {
         Information("Cleaning {0}", project);
         DotNetCoreClean(project.FullPath);
@@ -73,7 +79,13 @@ Task("Clean")
 Task("Restore")
     .Description("Restores all the NuGet packages that are used by the specified solution.")
     .Does(() =>
-{
+{    
+    if (solutions.Count() == 0)
+    {
+        Information("No solutions found.");
+        return;
+    }
+
     var settings = new DotNetCoreRestoreSettings
     {
         ArgumentCustomization = args => args
@@ -84,7 +96,7 @@ Task("Restore")
     };
 
     // Restore all NuGet packages.
-    foreach(var solution in solutions)
+    foreach (var solution in solutions)
     {
         Information("Restoring {0}...", solution);
       
@@ -98,6 +110,12 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(() =>
 {
+    if (solutions.Count() == 0)
+    {
+        Information("No solutions found.");
+        return;
+    }
+    
     var settings = new DotNetCoreBuildSettings
     {
         Configuration = configuration,
@@ -109,7 +127,7 @@ Task("Build")
     };
 
     // Build all solutions.
-    foreach(var solution in solutions)
+    foreach (var solution in solutions)
     {
         Information("Building {0}", solution);
         
@@ -123,13 +141,20 @@ Task("Test")
     .Does(() =>
 {
     var projects = GetFiles("./Tests/**/*.Tests.csproj");
+    
+    if (projects.Count == 0)
+    {
+        Information("No test projects found.");
+        return;
+    }
+
     var settings = new DotNetCoreTestSettings
     {
         Configuration = configuration,
         NoBuild = true,
     };
 
-    foreach(var project in projects)
+    foreach (var project in projects)
     {
         DotNetCoreTest(project.FullPath, settings);
     }
@@ -140,6 +165,13 @@ Task("Pack")
     .Does(() =>
 {
     var projects = GetFiles("./src/**/*.csproj");
+    
+    if (projects.Count() == 0)
+    {
+        Information("No projects found.");
+        return;
+    }
+
     var settings = new DotNetCorePackSettings 
     {
         NoBuild = true,
@@ -163,8 +195,14 @@ Task("PublishMyGet")
     .Does(() =>
 {
     var nupkgs = GetFiles("./**/*.nupkg");
+    
+    if (nupkgs.Count() == 0)
+    {
+        Information("No nupkgs found.");
+        return;
+    }
 
-    foreach(var nupkgFile in nupkgs)
+    foreach (var nupkgFile in nupkgs)
     {
         Information("Pulishing to myget {0}", nupkgFile);
 
@@ -183,7 +221,13 @@ Task("PublishNuGet")
 {
     var nupkgs = GetFiles("./**/*.nupkg");
 
-    foreach(var nupkgFile in nupkgs)
+    if (nupkgs.Count() == 0)
+    {
+        Information("No nupkgs found.");
+        return;
+    }
+
+    foreach (var nupkgFile in nupkgs)
     {
         Information("Pulishing to nuget {0}", nupkgFile);
         NuGetPush(nupkgFile, new NuGetPushSettings 
@@ -267,6 +311,5 @@ public class BuildParameters
 
     public bool ShouldPublishNuGet => !string.IsNullOrWhiteSpace(NuGetApiKey) 
         && !string.IsNullOrWhiteSpace(NuGetFeed)
-        && IsMasterBranch 
-        && IsHotFixBranch;
+        && (IsMasterBranch || IsHotFixBranch);
 }
