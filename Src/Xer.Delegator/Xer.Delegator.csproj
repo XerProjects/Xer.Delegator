@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.0</TargetFramework>
+    <Authors>XerProjects contributors</Authors>
+    <Description>A simple delegate-based message handling library.</Description>
+    <Copyright>Copyright (c) XerProjects contributors</Copyright>
+    <PackageLicenseUrl>https://github.com/XerProjects/Xer.Delegator/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/XerProjects/Xer.Delegator</PackageProjectUrl>
+    <PackageTags>message-handler-delegate;message-handling;delegator;delegate;library;</PackageTags>
   </PropertyGroup>
 
 </Project>
