@@ -1,6 +1,6 @@
 
 # Xer.Delegator
-[![NuGet](https://img.shields.io/nuget/vpre/xer.delegator.svg)](https://www.nuget.org/packages/Xer.Delegator/)
+A lightweight in-process, delegate-based message handling library.
 
 # Build
 | Branch | Status |
@@ -8,7 +8,8 @@
 | Master | [![Build status](https://ci.appveyor.com/api/projects/status/9gk9go3i21y492ap?svg=true)](https://ci.appveyor.com/project/XerProjects25246/xer-delegator) |
 | Dev | [![Build status](https://ci.appveyor.com/api/projects/status/9gk9go3i21y492ap/branch/dev?svg=true)](https://ci.appveyor.com/project/XerProjects25246/xer-delegator/branch/dev) |
 
-A lightweight in-process message handling library without the boilerplates!
+# Nuget
+[![NuGet](https://img.shields.io/nuget/vpre/xer.delegator.svg)](https://www.nuget.org/packages/Xer.Delegator/)
 
 # Table of contents
 * [What is it?](#what-is-it)
