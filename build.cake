@@ -174,6 +174,7 @@ Task("Pack")
 
     var settings = new DotNetCorePackSettings 
     {
+        OutputDirectory = "./BuildArtifacts",
         NoBuild = true,
         Configuration = configuration,
         ArgumentCustomization = (args) => args
