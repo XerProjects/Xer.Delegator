@@ -10,11 +10,11 @@ namespace Xer.Delegator.Registration
     /// <summary>
     /// Represents an object which allows multiple message handler delegates to be registered for a given message type.
     /// </summary>
-    public class MultiMessageHandlerRegistration : IMessageHandlerRegistration
+    public class MultiMessageHandlerRegistration : IMessageHandlerRegistration, IMessageHandlerResolverBuilder
     {
         #region Declarations
 
-        private readonly MultiMessageHandlerDelegateStore _messageHandlersByMessageType = new MultiMessageHandlerDelegateStore();
+        private readonly MultiMessageHandlerDelegateStore _multiMessageHandlerStore = new MultiMessageHandlerDelegateStore();
 
         #endregion Declarations
 
@@ -33,7 +33,7 @@ namespace Xer.Delegator.Registration
                 throw new ArgumentNullException(nameof(messageHandler));
             }
 
-            _messageHandlersByMessageType.Add<TMessage>(messageHandler);
+            _multiMessageHandlerStore.Add<TMessage>(messageHandler);
         }
 
         #endregion IMessageHandlerRegistration Implementation
@@ -49,7 +49,7 @@ namespace Xer.Delegator.Registration
         /// </returns>
         public IMessageHandlerResolver BuildMessageHandlerResolver()
         {
-            return new MultiMessageHandlerResolver(_messageHandlersByMessageType);
+            return new MultiMessageHandlerResolver(_multiMessageHandlerStore);
         }
 
         #endregion Methods

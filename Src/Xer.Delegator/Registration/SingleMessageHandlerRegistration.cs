@@ -9,11 +9,11 @@ namespace Xer.Delegator.Registration
     /// <summary>
     /// Represents an object which only allows a single message handler delegate to be registered for a given message type.
     /// </summary>
-    public class SingleMessageHandlerRegistration : IMessageHandlerRegistration
+    public class SingleMessageHandlerRegistration : IMessageHandlerRegistration, IMessageHandlerResolverBuilder
     {
         #region Declarations
 
-        private readonly SingleMessageHandlerDelegateStore _messageHandlersByMessageType = new SingleMessageHandlerDelegateStore();
+        private readonly SingleMessageHandlerDelegateStore _singleMessageHandlerStore = new SingleMessageHandlerDelegateStore();
 
         #endregion Declarations
 
@@ -32,7 +32,7 @@ namespace Xer.Delegator.Registration
                 throw new ArgumentNullException(nameof(messageHandler));
             }
 
-            _messageHandlersByMessageType.Add<TMessage>(messageHandler);
+            _singleMessageHandlerStore.Add<TMessage>(messageHandler);
         }
 
         #endregion IMessageHandlerRegistration Implementation
@@ -47,7 +47,7 @@ namespace Xer.Delegator.Registration
         /// </returns>
         public IMessageHandlerResolver BuildMessageHandlerResolver()
         {
-            return new SingleMessageHandlerResolver(_messageHandlersByMessageType);
+            return new SingleMessageHandlerResolver(_singleMessageHandlerStore);
         }
 
         #endregion Methods
