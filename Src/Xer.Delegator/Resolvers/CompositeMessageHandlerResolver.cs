@@ -61,12 +61,12 @@ namespace Xer.Delegator.Resolvers
                 // Return null handler that does nothing.
                 return NullMessageHandlerDelegate.Instance;
             }
-            catch(NoMessageHandlerResolvedException)
+            catch (NoMessageHandlerResolvedException)
             {
                 // If a source has thrown this exception, just rethrow.
                 throw;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw NoMessageHandlerResolvedException.WithMessageType(messageType, ex);
             }

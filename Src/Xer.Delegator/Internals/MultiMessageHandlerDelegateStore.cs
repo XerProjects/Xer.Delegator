@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,7 +16,8 @@ namespace Xer.Delegator
 
         // This dictionary contains all the message handler delegates that are registered for a message type.
         private readonly Dictionary<Type, MessageHandlerContainer> _messageHandlersByMessageType = new Dictionary<Type, MessageHandlerContainer>();
-        
+        private readonly object _lock = new object(); 
+
         #endregion Declarations
 
         #region Methods
@@ -37,16 +40,19 @@ namespace Xer.Delegator
 
             Type messageType = typeof(TMessage);
 
-            // Check if a container already exists. 
-            if (_messageHandlersByMessageType.TryGetValue(messageType, out MessageHandlerContainer container))
+            lock (_lock)
             {
-                // Add message handler to existing container list.
-                container.AddMessageHandler(handler);
-            }
-            else
-            {
-                // Instantiate new container and add to dictionary.
-                _messageHandlersByMessageType.Add(messageType, new MessageHandlerContainer(messageType).AddMessageHandler(handler));
+                // Check if a container already exists. 
+                if (_messageHandlersByMessageType.TryGetValue(messageType, out MessageHandlerContainer container))
+                {
+                    // Replace message handler container with new instance that contains the updated handler list.
+                    _messageHandlersByMessageType[messageType] = container.AppendNew(handler);
+                }
+                else
+                {
+                    // Instantiate new container and add to dictionary.
+                    _messageHandlersByMessageType.Add(messageType, new MessageHandlerContainer(messageType, new[] { handler }));
+                }
             }
         }
 
@@ -66,7 +72,7 @@ namespace Xer.Delegator
         {
             if (_messageHandlersByMessageType.TryGetValue(messageType, out MessageHandlerContainer container))
             {
-                messageHandlerDelegate = container.MergedMessageHandler;
+                messageHandlerDelegate = container.CombinedMessageHandler;
                 return true;
             }
 
@@ -102,14 +108,13 @@ namespace Xer.Delegator
 
         #endregion Functions
 
-        #region Inner Class
+        #region Inner Struct
         
-        private class MessageHandlerContainer
+        private struct MessageHandlerContainer
         {
             #region Declarations
 
-            private MessageHandlerDelegate _mergedMessageHandler = NullMessageHandlerDelegate.Instance;
-            private List<MessageHandlerDelegate> _messageHandlerDelegates = new List<MessageHandlerDelegate>();
+            private MessageHandlerDelegate[] _messageHandlerDelegates;
 
             #endregion Declarations
 
@@ -121,14 +126,14 @@ namespace Xer.Delegator
             public Type MessageType { get; }
 
             /// <summary>
+            /// Provides a message handler delegate that invokes all the delegates in the message handler list.
+            /// </summary>
+            public MessageHandlerDelegate CombinedMessageHandler { get; }
+            
+            /// <summary>
             /// List of message handlers for the message type defined in the message type property.
             /// </summary>
-            public IReadOnlyList<MessageHandlerDelegate> MessageHandlers => _messageHandlerDelegates;
-
-            /// <summary>
-            /// Provides a merged message handler delegate that invokes all the delegates in the message handler list.
-            /// </summary>
-            public MessageHandlerDelegate MergedMessageHandler => _mergedMessageHandler;
+            public IReadOnlyCollection<MessageHandlerDelegate> MessageHandlers => new ReadOnlyCollection<MessageHandlerDelegate>(_messageHandlerDelegates);
 
             #endregion Properties
 
@@ -138,8 +143,11 @@ namespace Xer.Delegator
             /// Constructor.
             /// </summary>
             /// <param name="messageType">Type of message.</param>
-            public MessageHandlerContainer(Type messageType)
+            /// <param name="messageHandlerDelegates">Message handler delegates.</param>
+            public MessageHandlerContainer(Type messageType, MessageHandlerDelegate[] messageHandlerDelegates)
             {
+                _messageHandlerDelegates = messageHandlerDelegates;
+                CombinedMessageHandler = CombineMessageHandlers(_messageHandlerDelegates);
                 MessageType = messageType;
             }
 
@@ -148,46 +156,53 @@ namespace Xer.Delegator
             #region Methods
 
             /// <summary>
-            /// Add a message handler to the list and rebuilds the MessageHandlerDelegate property 
-            /// to contain the newly added message handler delegate.
+            /// Add a message handler to the current list of <see cref="Xer.Delegator.MessageHandlerDelegate"/>
+            /// and return it in a new instance of <see cref="Xer.Delegator.MultiMessageHandlerDelegateStore.MessageHandlerContainer"/>.
             /// </summary>
             /// <param name="messageHandlerDelegate">Message handler delegate.</param>
-            public MessageHandlerContainer AddMessageHandler(MessageHandlerDelegate messageHandlerDelegate)
+            public MessageHandlerContainer AppendNew(MessageHandlerDelegate messageHandlerDelegate)
             {
-                _messageHandlerDelegates.Add(messageHandlerDelegate);
+                int updatedLength = _messageHandlerDelegates.Length + 1;
 
-                // Re-merge to include newly added message handler.
-                BuildMergedMessageHandler();
+                MessageHandlerDelegate[] updated = new MessageHandlerDelegate[updatedLength];
+                
+                // Copy and add new message handler delegate.
+                _messageHandlerDelegates.CopyTo(updated, 0);
+                
+                // Add new message handler delegate.
+                updated[updatedLength - 1] = messageHandlerDelegate;
 
-                return this;
+                return new MessageHandlerContainer(MessageType, updated);
             }
 
             /// <summary>
-            /// Merge all message handler delegates into a single delegate and assign to MergedMessageHandler property.
+            /// Combine all message handler delegates into a single delegate and assign to CombinedMessageHandler property.
             /// </summary>
-            private void BuildMergedMessageHandler()
+            private static MessageHandlerDelegate CombineMessageHandlers(MessageHandlerDelegate[] messageHandlerDelegates)
             {
-                if(_messageHandlerDelegates.Count > 0)
+                if (messageHandlerDelegates.Length > 0)
                 {
                     // Create a delegate that invokes all registered message handlers.
-                    _mergedMessageHandler = (message, cancellationToken) =>
+                    return (message, cancellationToken) =>
                     {
                         // Task list.
-                        Task[] handleTasks = new Task[_messageHandlerDelegates.Count];
+                        Task[] handleTasks = new Task[messageHandlerDelegates.Length];
 
                         // Invoke each message handler delegates to start the tasks and add to task list.
-                        for (int i = 0; i < _messageHandlerDelegates.Count; i++)
-                            handleTasks[i] = _messageHandlerDelegates[i].Invoke(message, cancellationToken);
+                        for (int i = 0; i < messageHandlerDelegates.Length; i++)
+                            handleTasks[i] = messageHandlerDelegates[i].Invoke(message, cancellationToken);
 
                         // Wait for all tasks to complete.
                         return Task.WhenAll(handleTasks);
                     };
                 }
+
+                return NullMessageHandlerDelegate.Instance;
             }
 
             #endregion Methods
         }
 
-        #endregion Inner Class
+        #endregion Inner Struct
     }
 }
